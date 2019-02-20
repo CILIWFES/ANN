@@ -3,14 +3,19 @@ import os
 
 class GlobalConstant:
     # 工程路径,三级目录
-    ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))) + "\\"
-    SUPPORT_PATH = ROOT_PATH + "files\\"
+    SYS_ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))) + "\\"
+    SYS_FILES_PATH = SYS_ROOT_PATH + "files\\"
 
-    CONFIG_FOLDER = "\\configuration\\"
+    SYS_CONFIG_FOLDER = "\\configuration\\"
     # 全局配置文件名
-    GLO_CONFIG_FILENAME = "configuration.ini"
+    SYS_GLO_CONFIG_FILENAME = "configuration.ini"
     # 全局配置文件路径
-    GLO_CONFIG_PATH = SUPPORT_PATH + CONFIG_FOLDER + GLO_CONFIG_FILENAME
+    SYS_GLO_CONFIG_PATH = SYS_FILES_PATH + SYS_CONFIG_FOLDER + SYS_GLO_CONFIG_FILENAME
+
+    # TRAINING 训练集路径
+    SYS_TRAINING_PACKAGE_PATH = SYS_FILES_PATH + "training-package\\"
+    # FASHION_MNIST 标准测试集路径
+    SYS_FASHION_MNIST_PATH = SYS_TRAINING_PACKAGE_PATH + "fashion-mnist\\"
 
     """
     配置文件中名字的统一命名
@@ -20,9 +25,9 @@ class GlobalConstant:
 
     # 通用项目
     # 文件夹路径
-    SAVE_FOLDER_CONFIG = "Folder"
-    SAVE_FILENAME_CONFIG = "FileName"
-    SAVE_BUNCHNAME_CONFIG = "BunchName"
+    COMMON_CONFIG_FOLDER = "Folder"
+    COMMON_CONFIG_FILENAME = "FileName"
+    COMMON_CONFIG_BUNCHNAME = "BunchName"
 
     """
     Section:大类
@@ -31,8 +36,16 @@ class GlobalConstant:
     ORM_CONFIG_SECTION = "ORM"
 
     """
-    Segmentation大类(分隔符)
+    SEGMENTATION大类(分隔符)
     """
-    Segmentation_CONFIG_SECTION = "Segmentation"
+    SEGMENTATION_CONFIG_SECTION = "Segmentation"
     # 普通分隔符
-    common_Segmentation = "common"
+    SEGMENTATION_COMMON = "common"
+
+    """
+    TRAINING:大类
+    """
+    TRAINING_FASHION_MNIST_TRAINING_DATA = "FASHION_MNIST_TrainingData"
+    TRAINING_FASHION_MNIST_TEST_DATA = "FASHION_MNIST_TestData"
+    TRAINING_FASHION_MNIST_TRAINING_LABEL = "FASHION_MNIST_TrainingLabel"
+    TRAINING_FASHION_MNIST_TEST_LABEL = "FASHION_MNIST_TestLabel"
