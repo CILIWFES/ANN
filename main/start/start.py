@@ -12,7 +12,7 @@ logging.getLogger().setLevel(logging.DEBUG)
 print("开始")
 
 n_sample = 100000
-batch_size = 10000
+batch_size = 100
 learning_rate = 0.1
 n_epoch = 10
 
@@ -51,9 +51,9 @@ module.fit(
     , optimizer_params={'learning_rate': learning_rate}
     , num_epoch=n_epoch
     , initializer=mx.initializer.Uniform(0.5)
-    # , batch_end_callback=mx.callback.Speedometer(batch_size, 100)
+    , batch_end_callback=mx.callback.Speedometer(batch_size, 100)
     # , epoch_end_callback=epoch_calback
-    , batch_end_callback=None
+    # , batch_end_callback=None
     , epoch_end_callback=None
 )
 
