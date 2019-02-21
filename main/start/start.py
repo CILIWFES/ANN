@@ -26,7 +26,7 @@ train_iter = mx.io.NDArrayIter(data=np.array(train_in), label={'reg_label': np.a
 
 src = mx.sym.Variable('data')
 
-fc1 = mx.sym.FullyConnected(data=src, num_hidden=1000, name='fc1')
+fc1 = mx.sym.FullyConnected(data=src, num_hidden=10, name='fc1')
 act1 = mx.sym.Activation(data=fc1, act_type='relu', name='act1')
 
 
