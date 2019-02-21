@@ -30,8 +30,8 @@ class FashionMnist:
         with gzip.open(image_url, 'rb') as fimg:
             magic, num, rows, cols = struct.unpack(">IIII", fimg.read(16))
             image = np.fromstring(fimg.read(), dtype=np.uint8)
-            # 行 (长x宽)
-            image = image.reshape(len(label), rows, cols)
+            # 图片 x[通道 x(长x宽)]
+            image = image.reshape(len(label), 1, rows, cols)
             image = image.astype(np.float32) / 255.0
         return (image, label, rows, cols)
 
@@ -47,7 +47,7 @@ class FashionMnist:
             ax = fig.add_subplot(matrix_size, matrix_size, i + 1)
             if labels is not None:
                 ax.set_title(labels[i])
-            plt.imshow(imgs[i], cmap="Greys_r")
+            plt.imshow(imgs[i][0], cmap="Greys_r")
             # 坐标轴关闭
             plt.axis("off")
         plt.show()
