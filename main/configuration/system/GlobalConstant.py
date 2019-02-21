@@ -33,7 +33,7 @@ class GlobalConstant:
     Section:大类
     """
     # ORM框架配置文件section
-    ORM_CONFIG_SECTION = "ORM"
+    ORM_CONFIG_SECTION = "orm"
 
     """
     SEGMENTATION大类(分隔符)
@@ -45,6 +45,7 @@ class GlobalConstant:
     """
     TRAINING:大类
     """
+    TRAINING_SECTION = "Training"
     TRAINING_FASHION_MNIST_TRAINING_DATA = "FASHION_MNIST_TrainingData"
     TRAINING_FASHION_MNIST_TEST_DATA = "FASHION_MNIST_TestData"
     TRAINING_FASHION_MNIST_TRAINING_LABEL = "FASHION_MNIST_TrainingLabel"

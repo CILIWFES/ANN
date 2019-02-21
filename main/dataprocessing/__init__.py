@@ -1,3 +1,2 @@
-from .Pretreatment import *
-from .ORM import *
-from .ConstructTestSet import *
+from .orm import *
+from .training_set import *
