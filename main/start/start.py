@@ -35,7 +35,7 @@ shape = {"data": (batch_size, 1, train_rows, train_cols)}
 mx.viz.print_summary(symbol=net, shape=shape)
 
 # 由于训练数据量较大，这里采用了GPU，若读者没有GPU，可修改为CPU
-module = mx.mod.Module(symbol=net, context=mx.gpu())
+module = mx.mod.Module(symbol=net, context=mx.cpu())
 
 # mx.viz.plot_network(symbol=net, shape=shape).view()
 
@@ -51,4 +51,5 @@ module.fit(
     num_epoch=20,
     batch_end_callback=mx.callback.Speedometer(batch_size, 60000 / batch_size)
 )
-module.save_checkpoint('../test', 20)
+
+ORM.Module_Save(module, "test", 20)

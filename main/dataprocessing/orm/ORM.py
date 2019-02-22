@@ -1,5 +1,6 @@
 import pickle
 import os
+from main.configuration import *
 
 
 class ORM:
@@ -54,3 +55,9 @@ class ORM:
             return True
         else:
             return False
+
+    def Module_Save(self, module, fileName, epoch, save_optimizer_states=False, path=None):
+        if path is None:
+            path = GLOCF.getFilsPath(GLOCT.PERSISTENCE_SECTION,
+                                     [GLOCT.COMMON_CONFIG_FOLDER, GLOCT.PERSISTENCE_MXNET_FOLDER])
+        module.save_checkpoint(path+fileName, epoch, save_optimizer_states)

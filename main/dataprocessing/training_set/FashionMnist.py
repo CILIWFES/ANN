@@ -9,13 +9,23 @@ import matplotlib.pyplot as plt
 class FashionMnist:
     # section配置
     _section = GLOCT.TRAINING_SECTION
+
     # 训练集,测试集 的标签/数据路径
-    _train_label_path = GLOCT.SYS_FASHION_MNIST_PATH + GLOCF.getConfig(_section,
-                                                                       GLOCT.TRAINING_FASHION_MNIST_TRAINING_LABEL)
-    _train_img_path = GLOCT.SYS_FASHION_MNIST_PATH + GLOCF.getConfig(_section,
-                                                                     GLOCT.TRAINING_FASHION_MNIST_TRAINING_DATA)
-    _test_label_path = GLOCT.SYS_FASHION_MNIST_PATH + GLOCF.getConfig(_section, GLOCT.TRAINING_FASHION_MNIST_TEST_LABEL)
-    _test_img_path = GLOCT.SYS_FASHION_MNIST_PATH + GLOCF.getConfig(_section, GLOCT.TRAINING_FASHION_MNIST_TEST_DATA)
+    _train_label_path = GLOCF.getFilsPath(_section, [GLOCT.COMMON_CONFIG_FOLDER,
+                                                     GLOCT.TRAINING_FASHION_MNIST_PATH,
+                                                     GLOCT.TRAINING_FASHION_MNIST_TRAINING_LABEL])
+
+    _train_img_path = GLOCF.getFilsPath(_section, [GLOCT.COMMON_CONFIG_FOLDER,
+                                                   GLOCT.TRAINING_FASHION_MNIST_PATH,
+                                                   GLOCT.TRAINING_FASHION_MNIST_TRAINING_DATA])
+
+    _test_label_path = GLOCF.getFilsPath(_section, [GLOCT.COMMON_CONFIG_FOLDER,
+                                                    GLOCT.TRAINING_FASHION_MNIST_PATH,
+                                                    GLOCT.TRAINING_FASHION_MNIST_TEST_LABEL])
+
+    _test_img_path = GLOCF.getFilsPath(_section, [GLOCT.COMMON_CONFIG_FOLDER,
+                                                  GLOCT.TRAINING_FASHION_MNIST_PATH,
+                                                  GLOCT.TRAINING_FASHION_MNIST_TEST_DATA])
 
     def read_TrainImg(self):
         return self._read_Img(self._train_img_path, self._train_label_path)
