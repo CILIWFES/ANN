@@ -1,7 +1,5 @@
 import pickle
 import os
-import mxnet as mx
-from main.configuration import *
 
 
 class ORM:
@@ -56,28 +54,3 @@ class ORM:
             return True
         else:
             return False
-
-    def Module_Save(self, module, fileName, epoch, save_optimizer_states=False, path=None):
-        if path is None:
-            path = GLOCF.getFilsPath(GLOCT.PERSISTENCE_SECTION,
-                                     [GLOCT.COMMON_CONFIG_FOLDER, GLOCT.PERSISTENCE_MXNET_FOLDER])
-        module.save_checkpoint(path + fileName, epoch, save_optimizer_states)
-
-    def Module_Read(self, fileName, epoch, dataStruct, dataName='data', labelName=None, path=None,
-                    cpuType=False):
-
-        processor = mx.cpu() if (cpuType) else mx.gpu()
-
-        if path is None:
-            path = GLOCF.getFilsPath(GLOCT.PERSISTENCE_SECTION,
-                                     [GLOCT.COMMON_CONFIG_FOLDER, GLOCT.PERSISTENCE_MXNET_FOLDER])
-        sym, arg_params, aux_params = mx.model.load_checkpoint(path + fileName, epoch)
-
-        if labelName is not None:
-            mod = mx.mod.Module(symbol=sym, context=processor, data_names=[dataName], label_names=labelName)
-        else:
-            mod = mx.mod.Module(symbol=sym, context=processor, data_names=[dataName])
-
-        mod.bind(for_training=False, data_shapes=[(dataName, dataStruct)],label_shapes=)
-        mod.set_params(arg_params, aux_params)
-        return mod

@@ -36,7 +36,7 @@ class PerformanceMeasure:
         # 混淆矩阵
         self.confusions = []
 
-    def makeDistributionMatrix(self, predictions: List, realClass: List):
+    def _makeDistributionMatrix(self, predictions: List, realClass: List):
         allList = predictions + realClass
         counter = Counter(allList)
 
@@ -52,7 +52,7 @@ class PerformanceMeasure:
 
     # 构造混淆矩阵
     # B为调和平均测试B,表示查全的权重是查准的B倍(贝塔值>1对查全率影响大,B<1对准确率影响大)
-    def makeconfusions(self, B=1):
+    def _makeconfusions(self, B=1):
         if self.distributionMatrix is None:
             raise Exception("请先构造混淆矩阵")
         for index, name in enumerate(self.classList):
@@ -69,13 +69,13 @@ class PerformanceMeasure:
             # 请维护顺序
             self.confusions.append((TP, FP, FN, TN, Precision, Recall, Fb))
 
-    def fit(self, preClass, realClass, B=1):
+    def fit(self, preClass: list, realClass: list, B=1):
         if len(realClass) != len(preClass):
             raise Exception("长度不一致")
         # 构造分布图
-        self.makeDistributionMatrix(preClass, realClass)
+        self._makeDistributionMatrix(preClass, realClass)
         # 构造混淆矩阵
-        self.makeconfusions(B)
+        self._makeconfusions(B)
 
     # 绘制查准率\查全率\调和平均Fb 表格
     def printPRFData(self):
