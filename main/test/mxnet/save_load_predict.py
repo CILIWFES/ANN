@@ -1,17 +1,14 @@
-from analysis import PerM, MPoint
-from dataprocessing import FsMnist
+from main.analysis import PerM, MPoint
+from main.dataprocessing import FsMnist
 from main.frame.mxnet import MX_ORM, MX_Prediction
 import mxnet as mx
 import logging as log
 
 log.getLogger().setLevel(log.DEBUG)
 
-(train_img, train_lbl, train_rows, train_cols) = FsMnist.read_TrainImg()
-(test_img, test_lbl, test_rows, test_cols) = FsMnist.read_TestImg()
-batch_size = 64  # 批大小
 
-
-def train_save(fileName, train_img, test_img, train_lbl, test_lbl, batch_size, path="", num_epoch=20, context=mx.gpu()):
+def train_save(fileName, train_img, test_img, train_lbl, test_lbl, batch_size, train_rows, train_cols, path="",
+               num_epoch=20, context=mx.gpu()):
     # 迭代器
     train_iter = mx.io.NDArrayIter(train_img, train_lbl, batch_size, shuffle=True)
     val_iter = mx.io.NDArrayIter(test_img, test_lbl, batch_size)
@@ -80,5 +77,8 @@ def prediction(test_img, test_lbl, batch_size, num_epoch=20, path="", fileName=N
     FsMnist.showImg(test_img, test_lbl)
 
 
-# train_save('test', train_img, test_img, train_lbl, test_lbl, batch_size, num_epoch=20)
-prediction(test_img[0:10], test_lbl[0:10], 1, fileName="test", num_epoch=20)
+# (train_img, train_lbl, train_rows, train_cols) = FsMnist.read_TrainImg()
+(test_img, test_lbl, test_rows, test_cols) = FsMnist.read_TestImg()
+batch_size = 64  # 批大小
+# train_save('test', train_img, test_img, train_lbl, test_lbl, batch_size, train_rows, train_cols, num_epoch=20)
+prediction(test_img[10:30], test_lbl[10:30], 1, fileName="test", num_epoch=40)

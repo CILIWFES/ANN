@@ -42,6 +42,7 @@ class FashionMnist:
             image = np.fromstring(fimg.read(), dtype=np.uint8)
             # 图片 x[通道 x(长x宽)]
             image = image.reshape(len(label), 1, rows, cols)
+            # 归一化
             image = image.astype(np.float32) / 255.0
         return (image, label, rows, cols)
 
