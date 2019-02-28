@@ -55,13 +55,13 @@ def train_save(fileName, train_img, test_img, train_lbl, test_lbl, batch_size, t
         batch_end_callback=mx.callback.Speedometer(batch_size, 60000 / batch_size)
     )
     # 开始保存
-    MX_ORM.Module_Save(module, path + fileName, num_epoch)
+    MX_ORM.Module_Save(module, path + fileName)
 
 
-def prediction(test_img, test_lbl, batch_size, num_epoch=20, path="", fileName=None, module=None):
+def prediction(test_img, test_lbl, batch_size=1, num_epoch=None, path="", fileName=None, module=None):
     if module is None:
         assert fileName is not None
-        module = MX_ORM.Module_Read(path + fileName, num_epoch, (batch_size, 1, test_rows, test_cols), (batch_size,))
+        module = MX_ORM.Module_Read(path + fileName, (batch_size, 1, test_rows, test_cols), epoch=num_epoch)
 
     MPoint.setPoint()
     ret = MX_Prediction.prediction(test_img, module)
@@ -77,8 +77,8 @@ def prediction(test_img, test_lbl, batch_size, num_epoch=20, path="", fileName=N
     FsMnist.showImg(test_img, test_lbl)
 
 
-# (train_img, train_lbl, train_rows, train_cols) = FsMnist.read_TrainImg()
+(train_img, train_lbl, train_rows, train_cols) = FsMnist.read_TrainImg()
 (test_img, test_lbl, test_rows, test_cols) = FsMnist.read_TestImg()
 batch_size = 64  # 批大小
-# train_save('test', train_img, test_img, train_lbl, test_lbl, batch_size, train_rows, train_cols, num_epoch=20)
-prediction(test_img[10:30], test_lbl[10:30], 1, fileName="test", num_epoch=40)
+# train_save('test', train_img, test_img, train_lbl, test_lbl, batch_size, train_rows, train_cols, num_epoch=2)
+prediction(test_img[10:30], test_lbl[10:30], 1, fileName="test")

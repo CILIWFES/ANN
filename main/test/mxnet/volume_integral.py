@@ -63,9 +63,9 @@ batch_size = 64  # 批大小
 #     , num_epoch=20
 #     , batch_end_callback=mx.callback.Speedometer(batch_size, 60000 / batch_size)
 # )
-# MX_ORM.Module_Save(module, 'conTest', 20)
+# MX_ORM.Module_Save(module, 'conTest')
 MPoint.setPoint()
-module = MX_ORM.Module_Read('conTest', 20, (batch_size, 1, test_rows, test_cols), (batch_size,))
+module = MX_ORM.Module_Read('conTest', (1, 1, test_rows, test_cols))
 test_img = test_img[200:230]
 test_lbl = test_lbl[200:230]
 ret = MX_Prediction.prediction(test_img, module)
