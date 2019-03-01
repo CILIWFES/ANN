@@ -1,1 +1,1 @@
-from main.test.mxnet.volume_integral import *
+from main.test.mxnet.alexnet import *
