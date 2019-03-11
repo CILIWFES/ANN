@@ -1,1 +1,1 @@
-from main.test.mxnet.alexnet import *
+from main.test.mxnet.fashionMinistAlex import *
