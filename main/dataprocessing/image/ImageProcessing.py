@@ -3,26 +3,11 @@ import math
 import matplotlib.pyplot as plt
 
 
-def rotation_matrix(theta):
-    """
-    3D 旋转矩阵，围绕X轴旋转theta角
-    """
-    return np.c_[
-        [1, 0, 0],
-        [0, np.cos(theta), -np.sin(theta)],
-        [0, np.sin(theta), np.cos(theta)]
-    ]
-
-
-# np.c_[ ] 将列表中的元素在第二维上拼接起来
-# np.c_[[1,2],[3,4],[5,6]] =
-# array([[1, 3, 5],
-#        [2, 4, 6]])
-def undo_normalise(im):
-    return (1 / (np.exp(-im) + 1) * 257 - 1).astype("uint8")
-
-
 class ImageProcessing:
+    LEFT = 0
+    RIGHT = 1
+    UPON = 2
+    DOWN = 3
 
     # 1.传入 [图片数, 通道, 高, 宽]
     # 2.传入 [ 通道, 高, 宽]
@@ -98,8 +83,9 @@ class ImageProcessing:
             y_begin = np.random.randint(0, 28 - y_size + 1)
             imgs[i][0][x_begin:x_begin + x_size, y_begin:y_begin + y_size] = 0
 
-    def whirl(self, img: np.ndarray, channels, high, width):
-        im_rotated = np.einsum("ijk,lk->ijl", img, rotation_matrix(np.pi))
-        # 利用爱因斯坦求和约定做矩阵乘法，实际上是将每个RGB像素点表示的三维空间点绕X轴（即红色通道轴）旋转180°。
-        im2 = undo_normalise(im_rotated)
-        self.showGrayscale(img)
+    # 平移moveLength个像素
+    # direction:方向
+    # imgs [图片数, 通道, 高, 宽]
+    def move(self, img: np.ndarray, channels, high, width, moveX=0, moveY=0):
+        img[i][0] = np.pad(aug_img[i][0], ((0, 0), (amt, 0)), mode='constant')[:, :-amt]
+

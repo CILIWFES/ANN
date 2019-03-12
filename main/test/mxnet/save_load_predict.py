@@ -79,6 +79,7 @@ def prediction(test_img, test_lbl, batch_size=1, num_epoch=None, path="", fileNa
 
 (train_img, train_lbl, train_rows, train_cols) = FsMnist.read_TrainImg()
 (test_img, test_lbl, test_rows, test_cols) = FsMnist.read_TestImg()
-batch_size = 64  # 批大小
+# 批大小
+batch_size = 64
 # train_save('test', train_img, test_img, train_lbl, test_lbl, batch_size, train_rows, train_cols, num_epoch=2)
 prediction(test_img[10:30], test_lbl[10:30], 1, fileName="test")
