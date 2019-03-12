@@ -13,7 +13,7 @@ logging.getLogger().setLevel(logging.DEBUG)
 (train_img, train_lbl, train_rows, train_cols) = FsMnist.read_TrainImg()
 (val_img, val_lbl, test_rows, test_cols) = FsMnist.read_TestImg()
 
-batch_size = 32  # 批大小
+batch_size = 32  # 批大小 
 
 
 # 用于辅助定义网络，这是深度卷积网络中常用的"卷积-BN-非线性"模块

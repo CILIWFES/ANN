@@ -46,6 +46,41 @@ class FashionMnist:
             image = image.astype(np.float32) / 255.0
         return (image, label, rows, cols)
 
+    def change(self, image_url, label_url):
+        return ''
+    def changeOne(self, img):
+        # 有50%概率做左右翻转
+        if np.random.random() < 0.5:
+            # img[0]为第i号样本的0号通道，灰度图像只有0号通道
+            # fliplr()用于左右翻转
+            img[0] = np.fliplr(img[0])
+
+        # 左右移动最多2个像素，注意randint(a,b)的范围为a到b-1
+        amt = np.random.randint(0, 3)
+        if amt > 0:  # 如果需要移动…
+            if np.random.random() < 0.5:  # 左移动还是右移动？
+                # pad()用于加上外衬，因移动后减少的区域需补零
+                # 然后用[:]取所要的部分
+                img[0] = np.pad(img[0], ((0, 0), (amt, 0)), mode='constant')[:, :-amt]
+            else:
+                img[0] = np.pad(img[0], ((0, 0), (0, amt)), mode='constant')[:, amt:]
+
+        # 上下移动最多2个像素
+        amt = np.random.randint(0, 3)
+        if amt > 0:
+            if np.random.random() < 0.5:
+                img[0] = np.pad(img[0], ((amt, 0), (0, 0)), mode='constant')[:-amt, :]
+            else:
+                img[0] = np.pad(img[0], ((0, amt), (0, 0)), mode='constant')[amt:, :]
+
+        # 随机清零最大5*5的区域
+        x_size = np.random.randint(1, 6)
+        y_size = np.random.randint(1, 6)
+        x_begin = np.random.randint(0, 28 - x_size + 1)
+        y_begin = np.random.randint(0, 28 - y_size + 1)
+        img[0][x_begin:x_begin + x_size, y_begin:y_begin + y_size] = 0
+
+
     def showImg(self, imgs: np.ndarray, labels: np.ndarray = None):
         img_size = imgs.shape[0]
 
