@@ -62,12 +62,16 @@ class Img:
 
 if __name__ == '__main__':
     # 0 去掉返回三通道
-    src = cv2.imread('D:\\xxx.jpeg', 1)
-    kk = IMP.conversionChannels(src)
-    IMP.showGrayscale(kk, np.array(['B', 'G', 'R']))
-    # bb = IMP.move(kk[0], -100, -100)
+    src = IMP.readPicture('D:\\', "xxx.jpeg")
+    channels = IMP.conversionChannels(src)
+    IMP.showPicture(IMP.reversalRGB(IMP.conversionChannels(channels, False)))
+
+    # IMP.showGrayscale(kk, np.array(['B', 'G', 'R']))
+
+    bb = IMP.flip(src, IMP.DIAGONAL_MIRRORING)
     # IMP.showGrayscale(bb)
-    cv2.imshow('src', IMP.conversionChannels(kk, False))
+    cv2.imshow('src', bb)
+    # cv2.imshow('src', IMP.conversionChannels(kk, False))
 
     rows = src.shape[0]
     cols = src.shape[1]
@@ -106,3 +110,5 @@ if __name__ == '__main__':
     # cv2.imshow('dst', rotate(src, 40, scale=1.5))
 
     cv2.waitKey(0)
+
+

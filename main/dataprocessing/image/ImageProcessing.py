@@ -5,10 +5,22 @@ import matplotlib.pyplot as plt
 
 
 class ImageProcessing:
-    LEFT = 0
-    RIGHT = 1
-    UPON = 2
-    DOWN = 3
+    HORIZONTAL_MIRRORING = 1
+    VERTICAL_MIRRORING = 0
+    DIAGONAL_MIRRORING = -1
+
+    def readPicture(self, path, fileName):
+        src = cv2.imread(path + fileName, 1)
+        return src
+
+    def readChannels(self, path, fileName):
+        src = cv2.imread(path + fileName, 1)
+        src = self.conversionChannels(src)
+        return src
+
+    def readGrayscale(self, path, fileName):
+        src = cv2.imread(path + fileName, 0)
+        return src
 
     # 通过通道数转化,通道前变为通道后
     def conversionChannels(self, imgs, toChannelFirst=True):
@@ -24,22 +36,37 @@ class ImageProcessing:
             else:
                 return cv2.merge(imgs)
 
-    # 1.传入 [图片数, 通道, 高, 宽]
-    # 2.传入 [ 通道, 高, 宽]
-    # 2.传入(灰度channelFirst=None) [ 图片数, 高, 宽]
-    def analyse(self, imgs: np.ndarray, channelFirst=True):
-        size = imgs.shape
-        if len(size) == 4:
-            i = 1
-        elif len(size) == 3:
-            i = 0
+    def reversalRGB(self, imgs):
+        # Opencv是 BGR ,变为RGB格式
+        if len(imgs.shape) == 3:
+            img_size = 1
+            showImgs = np.array([imgs])
+        elif len(imgs.shape) == 4:
+            img_size = imgs.shape[0]
+            showImgs = imgs
         else:
-            raise Exception("未知参数 尺寸:", size)
-        # 通道数,高,宽
-        if channelFirst:
-            return 1 if channelFirst is None else imgs.shape[i], imgs.shape[i + 1], imgs.shape[i + 2]
+            raise Exception("错误传入类型")
+
+        for item in showImgs:
+            for picture in item:
+                for channels in picture:
+                    channels[0], channels[2] = channels[2], channels[0]
+        return showImgs
+
+    def showPicture(self, imgs, labels: np.ndarray = None):
+        if len(imgs.shape) == 3:
+            img_size = 1
+            showImgs = [imgs]
+        elif len(imgs.shape) == 4:
+            img_size = imgs.shape[0]
+            showImgs = imgs
         else:
-            return 1 if channelFirst is None else imgs.shape[i], imgs.shape[i], imgs.shape[i + 1]
+            raise Exception("错误传入类型")
+
+        if labels is not None and labels.shape[0] != img_size:
+            raise Exception("输入图片与标签不符合")
+        matrix_size = math.ceil(pow(img_size, 0.5))
+        self._showPyplot(showImgs, img_size, matrix_size, labels=labels)
 
     # imgs [图片数, 高, 宽]
     # imgs [高, 宽]
@@ -55,65 +82,20 @@ class ImageProcessing:
 
         if labels is not None and labels.shape[0] != img_size:
             raise Exception("输入图片与标签不符合")
-
-        fig = plt.figure()
-        # 向上转型
         matrix_size = math.ceil(pow(img_size, 0.5))
-        for i in range(img_size):
-            # 添加图层
-            ax = fig.add_subplot(matrix_size, matrix_size, i + 1)
-            # 设置标签
-            if labels is not None:
-                ax.set_title(labels[i])
-            # 图像展示
-            plt.imshow(showImgs[i], cmap="Greys_r")
-            # 坐标轴关闭
-            plt.axis("off")
-        # 图层展示
-        plt.show()
 
-    def changeImage(self, imgs: np.ndarray):
-        channels, high, width = self.analyse(imgs)
+        self._showPyplot(showImgs, img_size, matrix_size, labels=labels, cmap='Greys_r')
 
-        for i in range(imgs.shape[0]):
-            # 有50%概率做左右翻转
-            if np.random.random() < 0.5:
-                # fliplr()用于左右翻转
-                for j in range(channels):
-                    imgs[i][j] = np.fliplr(imgs[i][j])
-            # 左右移动最多2个像素，注意randint(a,b)的范围为a到b-1
-            amt = np.random.randint(0, 3)
-            if amt > 0:  # 如果需要移动…
-                if np.random.random() < 0.5:  # 左移动还是右移动？
-                    # pad()用于加上外衬，因移动后减少的区域需补零
-                    # 然后用[:]取所要的部分
-                    imgs[i][0] = np.pad(imgs[i][0], ((0, 0), (amt, 0)), mode='constant')[:, :-amt]
-                else:
-                    imgs[i][0] = np.pad(imgs[i][0], ((0, 0), (0, amt)), mode='constant')[:, amt:]
-
-            # 上下移动最多2个像素
-            amt = np.random.randint(0, 3)
-            if amt > 0:
-                if np.random.random() < 0.5:
-                    imgs[i][0] = np.pad(imgs[i][0], ((amt, 0), (0, 0)), mode='constant')[:-amt, :]
-                else:
-                    imgs[i][0] = np.pad(imgs[i][0], ((0, amt), (0, 0)), mode='constant')[amt:, :]
-
-            # 随机清零最大5*5的区域
-            x_size = np.random.randint(1, 6)
-            y_size = np.random.randint(1, 6)
-            x_begin = np.random.randint(0, 28 - x_size + 1)
-            y_begin = np.random.randint(0, 28 - y_size + 1)
-            imgs[i][0][x_begin:x_begin + x_size, y_begin:y_begin + y_size] = 0
-
-    # delta_x,delta_y
-    # imgs [ 宽(右+ 左-),高(上- 下+)]
-    def move(self, image, delta_x=0, delta_y=0):  # 平移
+    # delta_x 宽(右+ 左-)
+    # delta_y 高(上- 下+)
+    # imgs [ 宽,高]
+    # imgs [ 宽,高,通道数]
+    def move(self, image, delta_x=0, delta_y=0, mode='constant'):  # 平移
         left = 0
         right = 0
         upon = 0
         low = 0
-        width = image.shape[-1]
+        width = image.shape[1]
         high = image.shape[0]
         if delta_x < 0:
             left = -delta_x
@@ -124,5 +106,48 @@ class ImageProcessing:
         else:
             low = delta_y
 
-        changeImge = np.pad(image, ((low, upon), (right, left)), mode='constant')[upon:high + upon, left:width + left]
+        changeTuple = ((low, upon), (right, left), (0, 0)) if len(image.shape) == 3 else ((low, upon), (right, left))
+        changeImge = np.pad(image, changeTuple, mode=mode)[upon:high + upon,
+                     left:width + left]
         return changeImge
+
+    def rotate(self, image, angle, center=None, scale=1.0):
+        (h, w) = image.shape[:2]
+        if center is None:
+            center = (w // 2, h // 2)
+
+        M = cv2.getRotationMatrix2D(center, angle, scale)
+
+        rotated = cv2.warpAffine(image, M, (w, h))
+        return rotated
+
+    def translate(self, image, x, y):
+        (h, w) = image.shape[:2]
+        M = np.float32([[1, 0, x], [0, 1, y]])
+        shifted = cv2.warpAffine(image, M, (w, h))
+        return shifted
+
+    def flip(self, image, mode):
+        # python 图像翻转,使用openCV flip()方法翻转
+        xImg = cv2.flip(image, mode, dst=None)
+        return xImg
+
+    def _showPyplot(self, showImgs, img_size, matrix_size, cmap=None, labels=None):
+        fig = plt.figure()
+        # 向上转型
+        for i in range(img_size):
+            # 添加图层
+            ax = fig.add_subplot(matrix_size, matrix_size, i + 1)
+            # 设置标签
+            if labels is not None:
+                ax.set_title(labels[i])
+            # 图像展示
+            if cmap is None:
+                plt.imshow(showImgs[i])
+            else:
+                plt.imshow(showImgs[i], cmap=cmap)
+
+            # 坐标轴关闭
+            plt.axis("off")
+        # 图层展示
+        plt.show()
