@@ -1,6 +1,7 @@
 import cv2
 import math
 import numpy as np
+from main.dataprocessing.image import *
 
 
 class Img:
@@ -10,10 +11,23 @@ class Img:
         self.cols = cols  # 原始图像的列
         self.center = center  # 旋转中心，默认是[0,0]
 
-    def Move(self, delta_x, delta_y):  # 平移
-        # delta_x>0左移，delta_x<0右移
-        # delta_y>0上移，delta_y<0下移
-        self.transform = np.array([[1, 0, delta_x], [0, 1, delta_y], [0, 0, 1]])
+    def Move(self, image, delta_x, delta_y):  # 平移
+        left = 0
+        right = 0
+        upon = 0
+        low = 0
+
+        if delta_x < 0:
+            left = -delta_x
+        else:
+            right = delta_x
+        if delta_y < 0:
+            upon = -delta_y
+        else:
+            low = delta_y
+
+        changeImge = np.pad(image, ((upon, low), (left, right)), mode='constant')[upon:low, left:right]
+        return changeImge
 
     def Zoom(self, factor):  # 缩放
         # factor>1表示缩小；factor<1表示放大
@@ -48,10 +62,16 @@ class Img:
 
 if __name__ == '__main__':
     # 0 去掉返回三通道
-    src = cv2.imread('D:\\xxx.jpg', 0)
+    src = cv2.imread('D:\\xxx.jpeg', 1)
+    kk = IMP.conversionChannels(src)
+    IMP.showGrayscale(kk, np.array(['B', 'G', 'R']))
+    # bb = IMP.move(kk[0], -100, -100)
+    # IMP.showGrayscale(bb)
+    cv2.imshow('src', IMP.conversionChannels(kk, False))
+
     rows = src.shape[0]
     cols = src.shape[1]
-    cv2.imshow('src', src)
+    # cv2.imshow('src', bb)
 
     img = Img(src, rows, cols, [340, 454])
 
@@ -69,19 +89,20 @@ if __name__ == '__main__':
     # 这个更快
     # img.dst = np.pad(src, ((0, 0), (300, 0)), mode='constant')[:, :-300]
     #
-    # cv2.imshow('dst', img.dst)
+    # cv2.imshow('dst', kk[0])
+    # IMP.showGrayscale(np.array([[kk[0]]]))
     # 旋转更快
-    def rotate(image, angle, center=None, scale=1.0):  # 1
-        (h, w) = image.shape[:2]  # 2
-        if center is None:  # 3
-            center = (w // 2, h // 2)  # 4
+    def rotate(image, angle, center=None, scale=1.0):
+        (h, w) = image.shape[:2]
+        if center is None:
+            center = (w // 2, h // 2)
 
-        M = cv2.getRotationMatrix2D(center, angle, scale)  # 5
+        M = cv2.getRotationMatrix2D(center, angle, scale)
 
-        rotated = cv2.warpAffine(image, M, (w, h))  # 6
-        return rotated  # 7
+        rotated = cv2.warpAffine(image, M, (w, h))
+        return rotated
 
 
-    cv2.imshow('dst', rotate(src, 40,scale=2))
+    # cv2.imshow('dst', rotate(src, 40, scale=1.5))
 
     cv2.waitKey(0)
