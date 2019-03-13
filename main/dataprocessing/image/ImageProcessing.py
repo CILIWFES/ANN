@@ -1,7 +1,9 @@
 import numpy as np
 import cv2
 import math
+import random
 import matplotlib.pyplot as plt
+from analysis.performanceMeasure import *
 
 
 class ImageProcessing:
@@ -9,15 +11,20 @@ class ImageProcessing:
     VERTICAL_MIRRORING = 0
     DIAGONAL_MIRRORING = -1
 
+    # 读取图片,返回图片矩阵(1个像素3通道)
     def readPicture(self, path, fileName):
         src = cv2.imread(path + fileName, 1)
+        src = self.reversalRGB(src, cv2.COLOR_BGR2RGB)
         return src
 
+    # 读取图片,返回图片矩阵(1个像素1通道)
     def readChannels(self, path, fileName):
         src = cv2.imread(path + fileName, 1)
+        src = self.reversalRGB(src, cv2.COLOR_BGR2RGB)
         src = self.conversionChannels(src)
         return src
 
+    # 读取灰度图片
     def readGrayscale(self, path, fileName):
         src = cv2.imread(path + fileName, 0)
         return src
@@ -36,24 +43,15 @@ class ImageProcessing:
             else:
                 return cv2.merge(imgs)
 
-    def reversalRGB(self, imgs):
+    # openCv 是BGR 这里与RGB相互转化(其实只是R与G互换,执行两遍换回来)
+    def reversalRGB(self, imgs, mode=cv2.COLOR_RGB2BGR):
         # Opencv是 BGR ,变为RGB格式
-        if len(imgs.shape) == 3:
-            img_size = 1
-            showImgs = np.array([imgs])
-        elif len(imgs.shape) == 4:
-            img_size = imgs.shape[0]
-            showImgs = imgs
-        else:
-            raise Exception("错误传入类型")
-
-        for item in showImgs:
-            for picture in item:
-                for channels in picture:
-                    channels[0], channels[2] = channels[2], channels[0]
+        showImgs = cv2.cvtColor(imgs, mode)
         return showImgs
 
-    def showPicture(self, imgs, labels: np.ndarray = None):
+    # imgs [图片数, 高, 宽]
+    # imgs [高, 宽]
+    def showPicture_RBG(self, imgs, labels: np.ndarray = None):
         if len(imgs.shape) == 3:
             img_size = 1
             showImgs = [imgs]
@@ -86,51 +84,84 @@ class ImageProcessing:
 
         self._showPyplot(showImgs, img_size, matrix_size, labels=labels, cmap='Greys_r')
 
-    # delta_x 宽(右+ 左-)
-    # delta_y 高(上- 下+)
-    # imgs [ 宽,高]
-    # imgs [ 宽,高,通道数]
-    def move(self, image, delta_x=0, delta_y=0, mode='constant'):  # 平移
-        left = 0
-        right = 0
-        upon = 0
-        low = 0
-        width = image.shape[1]
-        high = image.shape[0]
-        if delta_x < 0:
-            left = -delta_x
-        else:
-            right = delta_x
-        if delta_y < 0:
-            upon = -delta_y
-        else:
-            low = delta_y
+    # IMP.showPicture_BRG(IMP.reversalRGB(picture), wait=True)
+    def showPicture_BRG(self, image, name=None, wait=False):
+        if name is None:
+            name = ''.join(random.sample('zyxwvutsrqponmlkjihgfedcba', 8))
+        cv2.imshow(name, image)
+        if wait is True:
+            cv2.waitKey(0)
 
-        changeTuple = ((low, upon), (right, left), (0, 0)) if len(image.shape) == 3 else ((low, upon), (right, left))
-        changeImge = np.pad(image, changeTuple, mode=mode)[upon:high + upon,
-                     left:width + left]
-        return changeImge
+    # 旋转
+    def rotate(self, image, angle, center=None, scale=1.0, channelPicture=False):
 
-    def rotate(self, image, angle, center=None, scale=1.0):
-        (h, w) = image.shape[:2]
+        if channelPicture:
+            (c, h, w) = image.shape[:3]
+        else:
+            (h, w) = image.shape[:2]
+            c = 1
+
         if center is None:
             center = (w // 2, h // 2)
-
         M = cv2.getRotationMatrix2D(center, angle, scale)
 
-        rotated = cv2.warpAffine(image, M, (w, h))
+        if c == 1:
+            rotated = cv2.warpAffine(image, M, (w, h))
+        else:
+            rotated = np.array([cv2.warpAffine(item, M, (w, h)) for item in image])
+
         return rotated
 
-    def translate(self, image, x, y):
-        (h, w) = image.shape[:2]
+    # 平移
+    def translate(self, image, x, y, channelPicture=False):
         M = np.float32([[1, 0, x], [0, 1, y]])
-        shifted = cv2.warpAffine(image, M, (w, h))
+
+        if channelPicture:
+            (h, w) = image.shape[1:3]
+            shifted = np.array([cv2.warpAffine(item, M, (w, h)) for item in image])
+        else:
+            (h, w) = image.shape[:2]
+            shifted = cv2.warpAffine(image, M, (w, h))
+
         return shifted
 
-    def flip(self, image, mode):
+    # 对称
+    def flip(self, image, mode, channelPicture=False):
         # python 图像翻转,使用openCV flip()方法翻转
-        xImg = cv2.flip(image, mode, dst=None)
+        # mode=0 垂直 1 水平 -1对角线
+        if channelPicture:
+            xImg = np.array([cv2.flip(item, mode, dst=None) for item in image])
+        else:
+            xImg = cv2.flip(image, mode, dst=None)
+
         return xImg
+
+    # 缩放
+    # INTER_NEAREST最近邻插值
+    # INTER_LINEAR 线性插值
+    # CV_INTER_AREA：区域插值
+    # INTER_CUBIC 三次样条插值
+    # INTER_LANCZOS4 Lanczos插值
+    def resize(self, picture, toWidth=0, toHigh=0, mode=cv2.INTER_LINEAR, isChannelPicture=False):
+        toWidth = math.ceil(toWidth)
+        toHigh = math.ceil(toHigh)
+
+        if isChannelPicture:
+            changePicture = cv2.resize(picture, (toWidth, toHigh), mode)
+        else:
+            changePicture = [cv2.resize(item, (toWidth, toHigh), mode) for item in picture]
+
+        return changePicture
+
+    # 裁剪图片 point:(x,y)  width:宽度 high:高度
+    # IMP.cutOut(channels, (120, 200), 100, 200)
+    def cutOut(self, image, point, width, high, channelPicture=False):
+        picture = image.copy()
+        if channelPicture:
+            picture[point[0]:point[0] + width, point[1]:point[1] + high] = 0
+        else:
+            picture[:, point[0]:point[0] + width, point[1]:point[1] + high] = 0
+        return picture
 
     def _showPyplot(self, showImgs, img_size, matrix_size, cmap=None, labels=None):
         fig = plt.figure()
