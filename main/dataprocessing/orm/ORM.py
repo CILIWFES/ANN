@@ -1,5 +1,6 @@
 import pickle
 import os
+import cv2
 
 
 class ORM:
@@ -26,6 +27,12 @@ class ORM:
         fp = open(savePath + fileName, "wb")
         fp.write(content)
         fp.close()
+    # 保存图片
+    def savePicture(self, savePath, fileName, image):
+        if not os.path.exists(savePath):
+            os.makedirs(savePath)  # 若不存在则创建目录
+        cv2.imwrite(savePath+fileName, image)
+
 
     # 读取文件
     def readFile(self, classPath, fileName):

@@ -3,7 +3,7 @@ import cv2
 import math
 import random
 import matplotlib.pyplot as plt
-from analysis.performanceMeasure import *
+from main.analysis.performanceMeasure import *
 
 
 class ImageProcessing:
@@ -31,7 +31,7 @@ class ImageProcessing:
 
     # 通过通道数转化,通道前变为通道后
     def conversionChannels(self, imgs, toChannelFirst=True):
-        if len(imgs) == 4:
+        if len(imgs.shape) == 4:
             if toChannelFirst:
                 return np.array([cv2.split(item) for item in imgs])
             else:

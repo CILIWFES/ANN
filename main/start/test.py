@@ -1,6 +1,7 @@
 import pickle
 import numpy as mp
 from main.dataprocessing.image import *
+from main.dataprocessing.training_set import *
 
 
 def load_file(filename):
@@ -9,7 +10,9 @@ def load_file(filename):
     return data
 
 
-data = load_file('C:\\Users\\ZC\\Downloads\\cifar-10-batches-py\\batches.meta')
+# data = load_file(r'D:\CodeSpace\Python\ANN\files\training-package\cifar-10\batches.meta')
 # 32*32
 
-print(data.keys())
+# print(data.keys())
+Cifar.toConversion()
+
