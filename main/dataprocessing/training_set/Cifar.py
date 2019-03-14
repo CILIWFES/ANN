@@ -17,7 +17,11 @@ class Cifar:
         for item in fileRange:
             data = self.__conversion(filePath + fileName + item, pictureInfo)
             data[Cifar.data] = self.toImage(data[Cifar.data], batchSize, pictureInfo)
-            self.toSave(data, filePath + Cifar.conversion_picture_path, tags)
+            self.toSave(data, filePath + Cifar.conversion_picture_path+'train\\', tags)
+
+        data = self.__conversion(Cifar._test_path, pictureInfo)
+        data[Cifar.data] = self.toImage(data[Cifar.data], batchSize, pictureInfo)
+        self.toSave(data, filePath + Cifar.conversion_picture_path + 'test\\', tags)
 
     def toSave(self, data, path, tags):
         labels = data[Cifar.labels]

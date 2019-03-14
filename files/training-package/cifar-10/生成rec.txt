@@ -1,0 +1,27 @@
+生成list 第一个是生成类型 倒二个是文件名 倒一是文件夹路径
+python im2rec.py --list --recursive E:\CodeSpace\Python\ANN\files\training-package\cifar-10\picture\train E:\CodeSpace\Python\ANN\files\training-package\cifar-10\picture\train
+
+生成rec 倒二个是list文件 倒一是文件夹路径
+python im2rec.py --pass-through E:\CodeSpace\Python\ANN\files\training-package\cifar-10\picture\train.lst E:\CodeSpace\Python\ANN\files\training-package\cifar-10\picture\train
+
+
+python im2rec.py --list --recursive E:\CodeSpace\Python\ANN\files\training-package\cifar-10\picture\test E:\CodeSpace\Python\ANN\files\training-package\cifar-10\picture\test
+python im2rec.py --pass-through E:\CodeSpace\Python\ANN\files\training-package\cifar-10\picture\test.lst E:\CodeSpace\Python\ANN\files\training-package\cifar-10\picture\test
+
+在与train同级的文件夹中打开命令行，执行 python? F:\mxnet\incubator-mxnet-master\tools\im2rec.py? --list? --recursive? train? F:\........\train
+注意：
+
+? ? 踩过的坑主要在这里，参考资料中写的是--list=1 --recursive=1，这可能是老版本的写法，新版本这样写就会出错。源码中list、recursive默认的是False，此处只需指明--list? --recursive即可。
+
+? ? （4）从列表生成rec文件和idx文件
+
+在与train同级的文件夹中打开命令行，执行?python F:\mxnet\incubator-mxnet-master\tools\im2rec.py --pass-through train.lst F:
+\.........\train
+
+注意：这里也有几个坑
+
+同样的--pass-through参数无需再次赋值，只需指明即可；
+train.list一定要写上后缀，不然会报错；
+执行这条指令后可能会抱如下错误：TypeError: a bytes-like object is required, not 'str'。解决办法：在源码中将line = [i.strip() for i in line.strip().split('\t')] 修改为line = [i.strip() for i in str(line.strip(),encoding='utf-8').split('\t')]。源码中第103行（1.2.0版本）。?
+
+https://blog.csdn.net/qq_32863339/article/details/81162399
