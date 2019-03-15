@@ -1,1 +1,1 @@
-from main.test.mxnet.fashionMinistAlex import *
+from main.test.mxnet.CIFAR import *
