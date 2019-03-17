@@ -4,7 +4,7 @@ import numpy as np
 from main.dataprocessing.image import *
 from main.analysis.performanceMeasure import *
 
-picture = IMP.readPicture('D:\\', "xxx.jpg")
+picture = IMP.readPicture('E:\\', "sda.jpg")
 channels = IMP.conversionChannels(picture)
 
 IMP.showPicture_RBG(picture)

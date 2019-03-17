@@ -1,1 +1,1 @@
-from main.test.mxnet.CIFAR import *
+from main.test.mxnet.resnet import *
