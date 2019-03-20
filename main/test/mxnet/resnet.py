@@ -68,7 +68,7 @@ module = mx.mod.Module(symbol=net, context=mx.gpu(0))  # 网络模组
 
 # 数据迭代器
 train_iter = mx.io.ImageRecordIter(
-    path_imgrec="E:\\CodeSpace\\Python\\ANN\\files\\training-package\\cifar-10\\picture\\make\\train\\train.rec",
+    path_imgrec="D:\\CodeSpace\\Python\\ANN\\files\\training-package\\cifar-10\\picture\\make\\train\\train.rec",
     data_shape=(3, 28, 28),  # 图像通道和尺寸
     batch_size=batch_size,
     shuffle=True,  # 开启随机次序
@@ -85,7 +85,7 @@ train_iter = mx.io.ImageRecordIter(
     fill_value=0,  # 四周填充黑色
 )
 val_iter = mx.io.ImageRecordIter(
-    path_imgrec="E:\\CodeSpace\\Python\\ANN\\files\\training-package\\cifar-10\\picture\\make\\test\\test.rec",
+    path_imgrec="D:\\CodeSpace\\Python\\ANN\\files\\training-package\\cifar-10\\picture\\make\\test\\test.rec",
     data_shape=(3, 28, 28),
     batch_size=batch_size,
     shuffle=False,
