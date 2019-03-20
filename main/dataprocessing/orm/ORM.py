@@ -27,12 +27,12 @@ class ORM:
         fp = open(savePath + fileName, "wb")
         fp.write(content)
         fp.close()
+
     # 保存图片
     def savePicture(self, savePath, fileName, image):
         if not os.path.exists(savePath):
             os.makedirs(savePath)  # 若不存在则创建目录
-        cv2.imwrite(savePath+fileName, image)
-
+        cv2.imwrite(savePath + fileName, image)
 
     # 读取文件
     def readFile(self, classPath, fileName):
@@ -43,16 +43,19 @@ class ORM:
         return content
         # 读取文件
 
-    #  通过父文件(一级)价自动搜索,二级类别与类别下的文件(三级)
+    #  嗅探文件,返回[(路径,名字)]
     # seachPath="xxx/ss/"
     def autoSearch(self, seachPath):
         fileinfo = []
         cateList = os.listdir(seachPath)
         for mydir in cateList:
-            classPath = seachPath + mydir + '/'
-            fileList = os.listdir(classPath)
-            for fileName in fileList:
-                fileinfo.append((mydir, fileName))
+            if os.path.isfile(seachPath+mydir):
+                fileinfo.append((seachPath, mydir))
+            else:
+                classPath = seachPath + mydir + '/'
+                temp = self.autoSearch(classPath)
+                fileinfo.extend(temp)
+
         return fileinfo
 
     # 判断文件/文件夹是否存在

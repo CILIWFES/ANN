@@ -149,7 +149,7 @@ class ImageProcessing:
         if isChannelPicture:
             changePicture = cv2.resize(picture, (toWidth, toHigh), mode)
         else:
-            changePicture = [cv2.resize(item, (toWidth, toHigh), mode) for item in picture]
+            changePicture = np.array([cv2.resize(item, (toWidth, toHigh), mode) for item in picture])
 
         return changePicture
 

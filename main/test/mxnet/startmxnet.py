@@ -51,9 +51,9 @@ module.fit(
     , num_epoch=n_epoch
     , initializer=mx.initializer.Uniform(0.5)
     , batch_end_callback=mx.callback.Speedometer(batch_size, 10)
-    # , epoch_end_callback=epoch_calback
+    , epoch_end_callback=epoch_calback
     # , batch_end_callback=None
-    , epoch_end_callback=None
+    # , epoch_end_callback=None
 )
 
 # pre_iter = mx.io.NDArrayIter(data=np.array(train_in[0:10]))
