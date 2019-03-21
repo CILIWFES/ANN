@@ -78,10 +78,8 @@ class VerificationGenerate:
     # 0-9 A-Z 字符转化数字
     def toNum(self, char):
         numIndex = VerificationGenerate.numChoice[char]
-        lenSize = len(VerificationGenerate.numChoice)
-        zero = np.zeros((lenSize, 1))
-        zero[numIndex] = 1
-        return zero
+        ret = numIndex
+        return ret
 
     # 生成训练集(有线,点,偏移模式) VG.makeSet((100, 40), 31200, 3120)
     def makeSet(self, imageSize, trainSize, testSize, codeSize=4):
