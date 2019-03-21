@@ -33,7 +33,7 @@ class VerificationGenerate:
                            'MTCORSVA', 'MTEXTRA', 'OLDENGL', 'OUTLOOK', 'PALSCRI', 'PARCHM', 'PERTILI', 'POORICH',
                            'PRISTINA', 'RAGE', 'RAVIE', 'SCRIPTBL', 'segmdl2', 'SHOWG', 'SNAP____', 'STCAIYUN',
                            'STXINGKA', 'BRUSHSCI', 'symbol', 'VIVALDII', 'VLADIMIR', 'webdings', 'wingding', 'WINGDNG2',
-                           'WINGDNG3', 'GLSNECB', 'GILSANUB', 'LATINWD', 'GOUDYSTO', 'JUICE___']
+                           'WINGDNG3', 'GLSNECB', 'GILSANUB', 'LATINWD', 'GOUDYSTO', 'JUICE___', 'REFSPCL']
         # 默认windows字体
         if SYSFontPath is None:
             self.SYSFontPath = 'C:/Windows/Fonts/'
