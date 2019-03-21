@@ -77,18 +77,34 @@ val_iter = mx.io.ImageRecordIter(
     rand_mirror=False,
 )
 
-
-
 # 训练
-module.fit(
-    train_iter,
-    eval_data=val_iter,
-    initializer=mx.init.MSRAPrelu(slope=0.0),  # 采用MSRAPrelu初始化
-    optimizer='sgd',
-    # 采用0.5的初始学习速率，并在每50000个样本后将学习速率缩减为之前的0.98倍
-    optimizer_params={'learning_rate': 0.5,
-                      'lr_scheduler': mx.lr_scheduler.FactorScheduler(step=50000 / batch_size, factor=0.98)},
-    num_epoch=200,
-    batch_end_callback=mx.callback.Speedometer(batch_size, 50000 / batch_size),
-    epoch_end_callback=mx.callback.do_checkpoint('D:/CodeSpace/Python/ANN/files/persistence/mxnet/test/simple')
-)
+# module.fit(
+#     train_iter,
+#     eval_data=val_iter,
+#     initializer=mx.init.MSRAPrelu(slope=0.0),  # 采用MSRAPrelu初始化
+#     optimizer='sgd',
+#     # 采用0.5的初始学习速率，并在每50000个样本后将学习速率缩减为之前的0.98倍
+#     optimizer_params={'learning_rate': 0.5,
+#                       'lr_scheduler': mx.lr_scheduler.FactorScheduler(step=50000 / batch_size, factor=0.98)},
+#     num_epoch=200,
+#     batch_end_callback=mx.callback.Speedometer(batch_size, 50000 / batch_size),
+#     epoch_end_callback=mx.callback.do_checkpoint('D:/CodeSpace/Python/ANN/files/persistence/mxnet/test/simple')
+# )
+
+
+# 加载参数
+
+sym, arg_params, aux_params = mx.model.load_checkpoint("D:/CodeSpace/Python/ANN/files/persistence/mxnet/test2",
+                                                       26)  # load with net name and epoch num
+module.fit(train_iter,
+           arg_params=arg_params,
+           aux_params=aux_params,
+           begin_epoch=26,
+           optimizer='sgd',
+           # 采用0.5的初始学习速率，并在每50000个样本后将学习速率缩减为之前的0.98倍
+           optimizer_params={'learning_rate': 0.5,
+                             'lr_scheduler': mx.lr_scheduler.FactorScheduler(step=50000 / batch_size, factor=0.98)},
+           num_epoch=200,
+           batch_end_callback=mx.callback.Speedometer(batch_size, 50000 / batch_size),
+           # epoch_end_callback=mx.callback.do_checkpoint('D:/CodeSpace/Python/ANN/files/persistence/mxnet/test/simple')
+           )
