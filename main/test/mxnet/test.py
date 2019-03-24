@@ -1,98 +1,42 @@
 import numpy as np
 import logging
 import mxnet as mx
+from main.dataprocessing import *
 
 logging.getLogger().setLevel(logging.DEBUG)
 
-batch_size = 100  # 在此增大了批大小，因为ResNet的训练较慢
+batch_size = 100
+
+(trainImages, trainLabels), (testImages, testLabels) = VG.loadSet()
+
+data = mx.symbol.Variable('data')
+label = mx.symbol.Variable('softmax_label')
+conv1 = mx.symbol.Convolution(data=data, kernel=(5, 5), num_filter=32)
+pool1 = mx.symbol.Pooling(data=conv1, pool_type="max", kernel=(2, 2), stride=(1, 1))
+relu1 = mx.symbol.Activation(data=pool1, act_type="relu")
+
+conv2 = mx.symbol.Convolution(data=relu1, kernel=(5, 5), num_filter=32)
+pool2 = mx.symbol.Pooling(data=conv2, pool_type="avg", kernel=(2, 2), stride=(1, 1))
+relu2 = mx.symbol.Activation(data=pool2, act_type="relu")
+
+conv3 = mx.symbol.Convolution(data=relu2, kernel=(3,3), num_filter=32)
+pool3 = mx.symbol.Pooling(data=conv3, pool_type="avg", kernel=(2,2), stride=(1, 1))
+relu3 = mx.symbol.Activation(data=pool3, act_type="relu")
+
+conv4 = mx.symbol.Convolution(data=relu3, kernel=(3,3), num_filter=32)
+pool4 = mx.symbol.Pooling(data=conv4, pool_type="avg", kernel=(2,2), stride=(1, 1))
+relu4 = mx.symbol.Activation(data=pool4, act_type="relu")
+
+flatten = mx.symbol.Flatten(data=relu2)
+net = mx.symbol.FullyConnected(data=flatten, num_hidden=21)
+net = mx.symbol.SoftmaxOutput(data=net, label=label, name="softmax")
 
 
-# 残差模块
-def ResBlock(net, suffix, n_block, n_filter, stride=(1, 1)):
-    for i in range(0, n_block):
-        if i == 0:  # 注意第1个残差层的定义不同，读者可观察结构图思考原因
-            net = mx.sym.BatchNorm(net, name='bn' + suffix + '_a' + str(i), fix_gamma=False)
-            net = mx.sym.Activation(net, name='act' + suffix + '_a' + str(i), act_type='relu')
-            # 对于第1个残差层，旁路从此开始
-            pathway = mx.sym.Convolution(net, name="adj" + suffix, kernel=(1, 1), stride=stride, num_filter=n_filter)
-            # 回到主路
-            net = mx.sym.Convolution(net, name='conv' + suffix + '_a' + str(i), kernel=(3, 3), pad=(1, 1),
-                                     num_filter=n_filter, stride=stride)
-            net = mx.sym.BatchNorm(net, name='bn' + suffix + '_b' + str(i), fix_gamma=False)
-            net = mx.sym.Activation(net, name='act' + suffix + '_b' + str(i), act_type='relu')
-            net = mx.sym.Convolution(net, name='conv' + suffix + '_b' + str(i), kernel=(3, 3), pad=(1, 1),
-                                     num_filter=n_filter)
-            net = net + pathway  # 加上旁路，即为残差结构
-        else:
-            pathway = net  # 对于后续残差层，旁路从此开始
-            net = mx.sym.BatchNorm(net, name='bn' + suffix + '_a' + str(i), fix_gamma=False)
-            net = mx.sym.Activation(net, name='act' + suffix + '_a' + str(i), act_type='relu')
-            net = mx.sym.Convolution(net, name='conv' + suffix + '_a' + str(i), kernel=(3, 3), pad=(1, 1),
-                                     num_filter=n_filter)
-            net = mx.sym.BatchNorm(net, name='bn' + suffix + '_b' + str(i), fix_gamma=False)
-            net = mx.sym.Activation(net, name='act' + suffix + '_b' + str(i), act_type='relu')
-            net = mx.sym.Convolution(net, name='conv' + suffix + '_b' + str(i), kernel=(3, 3), pad=(1, 1),
-                                     num_filter=n_filter)
-            net = net + pathway  # 加上旁路，即为残差结构
-    return net
 
-
-net = mx.symbol.Variable('data')
-# 为数据加上BN层可有一定的预处理效果
-net = mx.sym.BatchNorm(net, name='bnPRE', fix_gamma=False)
-# 将3*32*32变化为32*32*32
-net = mx.sym.Convolution(net, name="convPRE", kernel=(3, 3), pad=(1, 1), num_filter=32)
-# 将32*32*32变化为64*32*32
-net = ResBlock(net, "1", 3, 64)
-# 将64*32*32变化为64*16*16
-net = ResBlock(net, "2", 3, 64, (2, 2))
-# 将64*16*16变化为128*8*8
-net = ResBlock(net, "3", 3, 128, (2, 2))
-# 因为此前的最终层是卷积，因此再做BN和Act处理
-net = mx.sym.BatchNorm(net, name='bnFINAL', fix_gamma=False)
-net = mx.sym.Activation(net, name='actFINAL', act_type='relu')
-# 将128*8*8变化为128*1*1
-net = mx.sym.Pooling(net, name="pool", global_pool=True, pool_type="avg", kernel=(1, 1))
-# 将128*1*1变换为128
-net = mx.sym.Flatten(net, name="flatten")
-# 将128变换为10
-net = mx.sym.FullyConnected(net, num_hidden=10, name='fc')
-net = mx.sym.SoftmaxOutput(net, name='softmax')
-
-# 输出参数情况供参考
-shape = {"data": (batch_size, 3, 28, 28)}
-mx.viz.print_summary(symbol=net, shape=shape)
-mx.viz.plot_network(symbol=net, shape=shape).view()
-
-module = mx.mod.Module(symbol=net, context=mx.gpu(0))  # 网络模组
-
-# 数据迭代器
-train_iter = mx.io.ImageRecordIter(
-    path_imgrec="D:\\CodeSpace\\Python\\ANN\\files\\training-package\\cifar-10\\picture\\make\\train\\train.rec",
-    data_shape=(3, 28, 28),  # 图像通道和尺寸
-    batch_size=batch_size,
-    shuffle=True,  # 开启随机次序
-    rand_crop=True,  # 开启随机裁剪
-    rand_mirror=True,  # 开启随机镜像
-    random_h=10,  # 随机色相
-    random_s=20,  # 随机饱和度
-    random_l=25,  # 随机亮度
-    max_random_scale=1.20,  # 随机放大
-    min_random_scale=0.88,  # 随机缩小
-    max_rotate_angle=20,  # 随机旋转
-    max_aspect_ratio=0.15,  # 随机长宽比例
-    max_shear_ratio=0.10,  # 随机倾斜比例
-    fill_value=0,  # 四周填充黑色
-)
-val_iter = mx.io.ImageRecordIter(
-    path_imgrec="D:\\CodeSpace\\Python\\ANN\\files\\training-package\\cifar-10\\picture\\make\\test\\test.rec",
-    data_shape=(3, 28, 28),
-    batch_size=batch_size,
-    shuffle=False,
-    rand_crop=False,
-    rand_mirror=False,
-)
-
+train_iter = mx.io.NDArrayIter(data=trainImages, label=trainLabels, batch_size=batch_size,
+                               shuffle=True)
+val_iter = mx.io.NDArrayIter(data=testImages, label=testLabels, batch_size=batch_size,
+                             shuffle=True)
 # 训练
 module.fit(
     train_iter,
@@ -102,6 +46,37 @@ module.fit(
     # 采用0.5的初始学习速率，并在每50000个样本后将学习速率缩减为之前的0.984倍
     optimizer_params={'learning_rate': 0.5,
                       'lr_scheduler': mx.lr_scheduler.FactorScheduler(step=50000 / batch_size, factor=0.984)},
-    num_epoch=8,
+    num_epoch=2000,
     batch_end_callback=mx.callback.Speedometer(batch_size, 50000 / batch_size)
 )
+#
+# metric = mx.metric.create('acc')
+# # 为测试，采用纯手动初始化：
+# print('初始数据')
+# module.bind(data_shapes=train_iter.provide_data, label_shapes=train_iter.provide_label)
+#
+# print('初始参数')
+# module.init_params(initializer=mx.init.MSRAPrelu(slope=0.0))
+# print('初始优化器')
+# module.init_optimizer()
+# for epoch in range(1000):  # 手动训练，这里只训练1个epoch
+#     train_iter.reset()  # 每个epoch需手动将迭代器复位
+#     # 实际训练时，应在此调用 metric.reset() 将性能指标复位
+#     for batch in train_iter:  # 对于每个batch...
+#         # print('============ input ============')
+#         # print(batch.data)  # 数据
+#         # print(batch.label)  # 数据的标签
+#         module.forward(batch, is_train=True)  # 前向传播
+#         # print('============ output ============')
+#         # print(module.get_outputs())  # 网络的输出
+#         metric.reset()  # 这里希望看网络的训练细节，所以对于每个样本都将指标复位
+#         module.update_metric(metric, batch.label)  # 更新指标
+#         print('============ metric ============')
+#         print(metric.get())  # 指标的情况
+#         # module.backward()  # 反向传播，计算梯度
+#         # print('============ grads ============')
+#         # print(module._exec_group.grad_arrays)  # 输出梯度情况
+#         module.update()  # 根据梯度情况，由优化器更新网络参数
+#         # print('============ params ============')
+#         # print(module.get_params())  # 输出新的参数
+#         print('\n')
