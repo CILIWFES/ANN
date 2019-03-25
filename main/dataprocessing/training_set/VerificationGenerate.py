@@ -138,10 +138,10 @@ class VerificationGenerate:
         font = ImageFont.truetype(fontName, fontSize)
         # 填充具有上下左右偏移的文字
         self.generateText(draw, code, size, font)
-        if lineSize > 0:
-            self.generateLine(draw, size[0], size[1], lineSize)
-        if pointSize > 0:
-            self.generatePoint(draw, size[0], size[1], pointSize)
+        # if lineSize > 0:
+        #     self.generateLine(draw, size[0], size[1], lineSize)
+        # if pointSize > 0:
+        #     self.generatePoint(draw, size[0], size[1], pointSize)
         return img
 
     # 填充文字

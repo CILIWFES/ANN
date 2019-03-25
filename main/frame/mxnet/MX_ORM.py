@@ -27,8 +27,8 @@ class MX_ORM:
 
     # 读取保存的mxnet module信息
     # 如 :Mx_ORM.Module_Read("test", (batch_size, 1, test_rows, test_cols))
-    def Module_Read(self, fileName, dataStruct, batch_size=None, epoch=None, dataName=None, labelName=None, path=None,
-                    cpuType=False,for_training=False):
+    def Module_Read(self, fileName, dataStruct, epoch=None,labelShape=None, dataName=None, labelName=None, path=None,
+                    cpuType=False, for_training=False):
         # 判断硬件类型
         processor = mx.cpu() if (cpuType) else mx.gpu()
         # 读取路径为空默认填充
@@ -65,8 +65,9 @@ class MX_ORM:
         # 加载module
         mod = mx.mod.Module(symbol=symbol, context=processor, data_names=[dataName], label_names=[labelName])
 
-        if batch_size is None:
-            batch_size = dataStruct[0]
-        mod.bind(for_training=for_training, data_shapes=[(dataName, dataStruct)], label_shapes=[(labelName, (batch_size,))])
+        if labelShape is None:
+            labelShape = (dataStruct[0],)
+        mod.bind(for_training=for_training, data_shapes=[(dataName, dataStruct)],
+                 label_shapes=[(labelName, labelShape)])
         mod.set_params(arg_params, aux_params)
         return mod

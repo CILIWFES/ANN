@@ -1,4 +1,5 @@
 import mxnet as mx
+import numpy as np
 from main.dataprocessing import *
 import logging
 
@@ -6,7 +7,6 @@ logging.getLogger().setLevel(logging.DEBUG)
 
 print('加载图片')
 (trainImages, trainLabels), (testImages, testLabels) = VG.loadSet()
-
 
 #
 # def get_ocrnet():
@@ -43,6 +43,8 @@ print('加载图片')
 #     label = mx.symbol.Reshape(data=label, target_shape=(0,))
 #     return mx.symbol.SoftmaxOutput(data=fc2, label=label, name="softmax")
 #
+batch_size = 100
+
 
 # 残差模块
 def ResBlock(net, suffix, n_block, n_filter, stride=(1, 1)):
@@ -95,37 +97,59 @@ net = mx.sym.Pooling(net, name="pool", global_pool=True, pool_type="avg", kernel
 net = mx.sym.Flatten(net, name="flatten")
 # 将128变换为10
 
-net = mx.sym.FullyConnected(net, num_hidden=12, name='fc')
+net = mx.sym.FullyConnected(net, num_hidden=128, name='fc')
+# net = mx.sym.FullyConnected(net, num_hidden=128, name='fc')
+net1 = mx.symbol.FullyConnected(data=net, num_hidden=36)
+net2 = mx.symbol.FullyConnected(data=net, num_hidden=36)
+net = mx.symbol.Concat(*[net1, net2], dim=0)
+label = mx.symbol.transpose(data=label)
+label = mx.symbol.Reshape(data=label, target_shape=(0,))
+net = mx.sym.SoftmaxOutput(net, name='Softmax', label=label)
 
-net = mx.sym.LogisticRegressionOutput(net, name='log', label=label)
-
-batch_size = 100
 print("加载网络")
 # 输出参数情况供参考
-shape = {"data": (batch_size, 3, 20, 40)}
-mx.viz.print_summary(symbol=net, shape=shape)
+# shape = {"data": (batch_size, 3, 20, 40)}
+# mx.viz.print_summary(symbol=net, shape=shape)
 
 # 由于训练数据多，这里采用了GPU，若读者没有GPU，可修改为CPU
 module = mx.mod.Module(symbol=net, context=mx.gpu(0))
 print('加载迭代器')
 train_iter = mx.io.NDArrayIter(data=trainImages, label=trainLabels, batch_size=batch_size,
                                shuffle=True)
+val_iter = mx.io.NDArrayIter(data=testImages, label=testLabels, batch_size=batch_size,
+                               shuffle=True)
 print("训练")
+
+codeSize = 2
+
+
+def Accuracy(label, pred, codeSize=2):
+    label = label.T.reshape((-1,))
+    pred_label = np.argmax(pred, axis=1)
+    hit = (pred_label == label).sum() // codeSize
+    total = pred.shape[0] // codeSize
+    return 1.0 * hit / total
+
+
+# mx.metric.create('acc') 会运行 (pred_label == label).sum() 由于传入的label没有转置
+# 会导致出现label=[1,2,1,2,1,2,1,2] 而pred_label 是[1,1,1,1,2,2,2,]这样子
+# 2字识别极限为50%
+
 # 训练
 module.fit(
     train_iter,
-    # eval_data=val_iter,
+    eval_data=val_iter,
     initializer=mx.init.MSRAPrelu(slope=0.0),  # 采用MSRAPrelu初始化
     optimizer='sgd',
-    eval_metric=mx.metric.create('mse'),
+    eval_metric=Accuracy,
     # 采用0.5的初始学习速率，并在每50000个样本后将学习速率缩减为之前的0.98倍
-    optimizer_params={'learning_rate': 0.0001,
-                      'lr_scheduler': mx.lr_scheduler.FactorScheduler(step=50000 / batch_size, factor=0.98)},
-    num_epoch=200,
-    batch_end_callback=mx.callback.Speedometer(batch_size, 50000 / batch_size),
-    # epoch_end_callback=mx.callback.do_checkpoint('D:/CodeSpace/Python/ANN/files/persistence/mxnet/test/simple')
+    optimizer_params={'learning_rate': 0.01,
+                      'lr_scheduler': mx.lr_scheduler.FactorScheduler(step=50000 // batch_size, factor=0.98)},
+    num_epoch=20000,
+    batch_end_callback=mx.callback.Speedometer(batch_size, 50000 // batch_size),
+    epoch_end_callback=mx.callback.do_checkpoint('D:/CodeSpace/Python/ANN/files/persistence/mxnet/test/simple')
 )
-
+#
 # metric = mx.metric.create('acc')
 # # 为测试，采用纯手动初始化：
 # print('初始数据')
@@ -145,6 +169,7 @@ module.fit(
 #         module.forward(batch, is_train=True)  # 前向传播
 #         # print('============ output ============')
 #         # print(module.get_outputs())  # 网络的输出
+#         kk = [np.argmax(module.get_outputs()[0],axis=1)]
 #         metric.reset()  # 这里希望看网络的训练细节，所以对于每个样本都将指标复位
 #         module.update_metric(metric, batch.label)  # 更新指标
 #         print('============ metric ============')
