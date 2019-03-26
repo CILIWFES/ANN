@@ -55,7 +55,7 @@ class VerificationGenerate:
         trainImages = []
         trainLabels = []
         for path, fileName in files:
-            img = IMP.readChannels(path, fileName)
+            img = np.array([IMP.readGrayscale(path, fileName)])
             trainImages.append(img)
             label = fileName.split('_')[0]
             trainLabels.append(np.array([self.toNum(item) for item in label]))
@@ -66,7 +66,7 @@ class VerificationGenerate:
         testImages = []
         testLabels = []
         for path, fileName in files:
-            img = IMP.readChannels(path, fileName)
+            img = np.array([IMP.readGrayscale(path, fileName)])
             testImages.append(img)
             label = fileName.split('_')[0]
             testLabels.append(np.array([self.toNum(item) for item in label]))
@@ -91,14 +91,14 @@ class VerificationGenerate:
         for i in range(trainSize):
             code = self.getCode(codeSize)
             item = fonts[random.randint(0, fontSize - 1)]
-            img = self.generate(imageSize, code, pointSize=random.randint(5, 20), lineSize=random.randint(0, 20),
+            img = self.generate(imageSize, code, pointSize=random.randint(0, 15), lineSize=random.randint(0, 15),
                                 fontSize=imageSize[1] * random.randint(3, 5) // 5, fontName=item)
 
             self.save(img, code + '_' + item + '.png', trainPath)
         for i in range(testSize):
             code = self.getCode(codeSize)
             item = fonts[random.randint(0, fontSize - 1)]
-            img = self.generate(imageSize, code, pointSize=random.randint(5, 20), lineSize=random.randint(0, 20),
+            img = self.generate(imageSize, code, pointSize=random.randint(0, 15), lineSize=random.randint(0, 15),
                                 fontSize=imageSize[1] * random.randint(3, 5) // 5, fontName=item)
             self.save(img, code + '_' + item + '.png', testPath)
 
@@ -165,6 +165,7 @@ class VerificationGenerate:
         self.generateText(draw, code, size, font, pad=8)
         if distortion:
             img = self.generateDistortion(img, size)
+            draw = ImageDraw.Draw(img, mode="RGB")
         if lineSize > 0:
             self.generateLine(draw, size[0], size[1], lineSize)
         if pointSize > 0:

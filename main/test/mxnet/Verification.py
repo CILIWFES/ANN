@@ -8,42 +8,7 @@ logging.getLogger().setLevel(logging.DEBUG)
 print('加载图片')
 (trainImages, trainLabels), (testImages, testLabels) = VG.loadSet()
 
-#
-# def get_ocrnet():
-#     data = mx.symbol.Variable('data')
-#     label = mx.symbol.Variable('softmax_label')
-#     bn = mx.sym.BatchNorm(data=data, name="bn", fix_gamma=False)
-#     # 100x40x3
-#     conv1 = mx.symbol.Convolution(data=bn, kernel=(3, 3), num_filter=96, pad=(1, 1), stride=(1, 1))
-#     # 100x40x96
-#     pool1 = mx.symbol.Pooling(data=conv1, pool_type="max", kernel=(4, 4), stride=(2, 2), pad=(1, 1))
-#     # 50 x 20 96
-#     relu1 = mx.symbol.Activation(data=pool1, act_type="relu")
-#     # 50x20 x96
-#     conv2 = mx.symbol.Convolution(data=relu1, kernel=(3, 3), num_filter=96, stride=(1, 1), pad=(1, 1))
-#     # 50x20 x96
-#     pool2 = mx.symbol.Pooling(data=conv2, pool_type="avg", kernel=(4, 4), stride=(2, 2), pad=(1, 1))
-#     # 25x10x96
-#     relu2 = mx.symbol.Activation(data=pool2, act_type="relu")
-#
-#     # 25x20x64
-#     conv3 = mx.symbol.Convolution(data=relu2, kernel=(3, 3), num_filter=32, pad=(1, 1), stride=(2, 2))
-#     # 13x5x32
-#     bn2 = mx.sym.BatchNorm(conv3, name="bn2", fix_gamma=False)
-#     relu3 = mx.symbol.Activation(data=bn2, act_type="relu")
-#
-#     flatten = mx.symbol.Flatten(data=relu3)
-#     fc1 = mx.symbol.FullyConnected(data=flatten, num_hidden=2080)
-#     fc21 = mx.symbol.FullyConnected(data=fc1, num_hidden=36)
-#     fc22 = mx.symbol.FullyConnected(data=fc1, num_hidden=36)
-#     fc23 = mx.symbol.FullyConnected(data=fc1, num_hidden=36)
-#     fc24 = mx.symbol.FullyConnected(data=fc1, num_hidden=36)
-#     fc2 = mx.symbol.Concat(*[fc21, fc22, fc23, fc24], dim=0)
-#     label = mx.symbol.transpose(data=label)
-#     label = mx.symbol.Reshape(data=label, target_shape=(0,))
-#     return mx.symbol.SoftmaxOutput(data=fc2, label=label, name="softmax")
-#
-batch_size = 100
+batch_size = 50
 
 
 # 残差模块
@@ -76,32 +41,43 @@ def ResBlock(net, suffix, n_block, n_filter, stride=(1, 1)):
     return net
 
 
+def Branch(net, suffix, n_filter, stride=(1, 1)):
+    # 回到主路
+    net = mx.sym.Convolution(net, name='convBranch' + suffix, kernel=(3, 3), pad=(1, 1),
+                             num_filter=n_filter, stride=stride)
+    net = mx.sym.BatchNorm(net, name='bnBranch' + suffix, fix_gamma=False)
+    net = mx.sym.Activation(net, name='actBranch' + suffix, act_type='relu')
+    net = mx.sym.Pooling(net, name="pool" + suffix, pool_type="avg", kernel=(3, 3), stride=(1, 1), pad=(1, 1))
+    net = mx.sym.Flatten(net, name="flatten" + suffix)
+    return net
+
+
 label = mx.symbol.Variable('softmax_label')
 net = mx.symbol.Variable('data')
-# 为数据加上BN层可有一定的预处理效果
-net = mx.sym.BatchNorm(net, name='bnPRE', fix_gamma=False)
-# 将3*32*32变化为32*32*32
-net = mx.sym.Convolution(net, name="convPRE", kernel=(3, 3), pad=(1, 1), num_filter=32)
-# 将32*32*32变化为64*32*32
-net = ResBlock(net, "1", 3, 64)
-# 将64*32*32变化为64*16*16
-net = ResBlock(net, "2", 3, 64, (2, 2))
-# 将64*16*16变化为128*8*8
-net = ResBlock(net, "3", 3, 128, (2, 2))
-# 因为此前的最终层是卷积，因此再做BN和Act处理
-net = mx.sym.BatchNorm(net, name='bnFINAL', fix_gamma=False)
-net = mx.sym.Activation(net, name='actFINAL', act_type='relu')
-# 将128*8*8变化为128*1*1
-net = mx.sym.Pooling(net, name="pool", global_pool=True, pool_type="avg", kernel=(1, 1))
-# 将128*1*1变换为128
-net = mx.sym.Flatten(net, name="flatten")
+# # 为数据加上BN层可有一定的预处理效果
+# net = mx.sym.BatchNorm(net, name='bnPRE', fix_gamma=False)
+# 将3*40*100变化为128*40*100
+net = mx.sym.Convolution(net, name="convPRE", kernel=(3, 3), pad=(1, 1), num_filter=128)
+# 将64*40*100变化为128*40*100
+net = ResBlock(net, "1", 2, 64)
+# 将128*40*100变化为128*20*50
+net = ResBlock(net, "2", 1, 64, (2, 2))
+
+# 将128*20*50变化为64*10*25
+net1 = Branch(net, "1", 64, (2, 2))
+# 将128*20*50变化为64*10*25
+net2 = Branch(net, "2", 64, (2, 2))
+# 将128*20*50变化为64*10*25
+net3 = Branch(net, "3", 64, (2, 2))
+# 将128*20*50变化为64*10*25
+net4 = Branch(net, "4", 64, (2, 2))
 # 将128变换为10
 
-net = mx.sym.FullyConnected(net, num_hidden=128, name='fc')
-# net = mx.sym.FullyConnected(net, num_hidden=128, name='fc')
-net1 = mx.symbol.FullyConnected(data=net, num_hidden=36)
-net2 = mx.symbol.FullyConnected(data=net, num_hidden=36)
-net = mx.symbol.Concat(*[net1, net2], dim=0)
+net1 = mx.symbol.FullyConnected(data=net1, num_hidden=36)
+net2 = mx.symbol.FullyConnected(data=net2, num_hidden=36)
+net3 = mx.symbol.FullyConnected(data=net3, num_hidden=36)
+net4 = mx.symbol.FullyConnected(data=net4, num_hidden=36)
+net = mx.symbol.Concat(*[net1, net2, net3, net4], dim=0)
 label = mx.symbol.transpose(data=label)
 label = mx.symbol.Reshape(data=label, target_shape=(0,))
 net = mx.sym.SoftmaxOutput(net, name='Softmax', label=label)
@@ -117,15 +93,30 @@ print('加载迭代器')
 train_iter = mx.io.NDArrayIter(data=trainImages, label=trainLabels, batch_size=batch_size,
                                shuffle=True)
 val_iter = mx.io.NDArrayIter(data=testImages, label=testLabels, batch_size=batch_size,
-                               shuffle=True)
+                             shuffle=True)
 print("训练")
 
-codeSize = 2
+codeSize = 4
 
 
-def Accuracy(label, pred, codeSize=2):
+def Accuracy(label, pred, codeSize=4):
     label = label.T.reshape((-1,))
     pred_label = np.argmax(pred, axis=1)
+    # hit = 0
+    # length = len(pred_label) // codeSize
+    # for i in range(len(pred_label) // codeSize):
+    #     sum = 0
+    #     for j in range(codeSize):
+    #         index = j * length + i
+    #         if pred_label[index] == label[index]:
+    #             sum = sum + 1
+    #         else:
+    #             break
+    #     if sum == codeSize:
+    #         hit = hit + 1
+    #
+    # total = pred.shape[0] // codeSize
+    # return 1.0 * hit / total
     hit = (pred_label == label).sum() // codeSize
     total = pred.shape[0] // codeSize
     return 1.0 * hit / total
@@ -134,20 +125,25 @@ def Accuracy(label, pred, codeSize=2):
 # mx.metric.create('acc') 会运行 (pred_label == label).sum() 由于传入的label没有转置
 # 会导致出现label=[1,2,1,2,1,2,1,2] 而pred_label 是[1,1,1,1,2,2,2,]这样子
 # 2字识别极限为50%
+# sym, arg_params, aux_params = mx.model.load_checkpoint("E:/CodeSpace/Python/ANN/files/persistence/mxnet/test/VG",
+#                                                        10)  # load with net name and epoch num
 
 # 训练
 module.fit(
     train_iter,
+    # arg_params=arg_params,
+    # aux_params=aux_params,
+    # begin_epoch=11,
     eval_data=val_iter,
     initializer=mx.init.MSRAPrelu(slope=0.0),  # 采用MSRAPrelu初始化
     optimizer='sgd',
     eval_metric=Accuracy,
-    # 采用0.5的初始学习速率，并在每50000个样本后将学习速率缩减为之前的0.98倍
-    optimizer_params={'learning_rate': 0.01,
-                      'lr_scheduler': mx.lr_scheduler.FactorScheduler(step=50000 // batch_size, factor=0.98)},
-    num_epoch=20000,
-    batch_end_callback=mx.callback.Speedometer(batch_size, 50000 // batch_size),
-    epoch_end_callback=mx.callback.do_checkpoint('D:/CodeSpace/Python/ANN/files/persistence/mxnet/test/simple')
+    # 采用0.1的初始学习速率，并在每5000个样本后将学习速率缩减为之前的0.98倍
+    optimizer_params={'learning_rate': 0.1,
+                      'lr_scheduler': mx.lr_scheduler.FactorScheduler(step=10000 // batch_size, factor=0.95)},
+    num_epoch=50,
+    # batch_end_callback=mx.callback.Speedometer(batch_size, 50000 // batch_size),
+    epoch_end_callback=mx.callback.do_checkpoint('E:/CodeSpace/Python/ANN/files/persistence/mxnet/test/VG')
 )
 #
 # metric = mx.metric.create('acc')
