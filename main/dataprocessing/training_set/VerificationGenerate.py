@@ -91,40 +91,18 @@ class VerificationGenerate:
         for i in range(trainSize):
             code = self.getCode(codeSize)
             item = fonts[random.randint(0, fontSize - 1)]
-            img = self.generate(imageSize, code, pointSize=random.randint(5, 20), lineSize=random.randint(0, 20),
+            img = self.generate(imageSize, code, pointSize=random.randint(0, 10), lineSize=random.randint(0, 10),
                                 fontSize=imageSize[1] * random.randint(3, 5) // 5, fontName=item)
 
-            self.save(img, code + '_' + item + '.png', trainPath)
+            self.save(img, code + '_' + item + str(i) + '.png', trainPath)
         for i in range(testSize):
             code = self.getCode(codeSize)
             item = fonts[random.randint(0, fontSize - 1)]
-            img = self.generate(imageSize, code, pointSize=random.randint(5, 20), lineSize=random.randint(0, 20),
+            img = self.generate(imageSize, code, pointSize=random.randint(0, 10), lineSize=random.randint(0, 10),
                                 fontSize=imageSize[1] * random.randint(3, 5) // 5, fontName=item)
-            self.save(img, code + '_' + item + '.png', testPath)
+            self.save(img, code + '_' + item + str(i) + '.png', testPath)
 
-    # 扭曲
-    # 对当前图像进行透视变换，产生给定尺寸的新图像。
-    # 变量data是一个8元组(a,b,c,d,e,f,g,h)，包括一个透视变换的系数。
-    # 对于输出图像中的每个像素点
-    # 新的值来自于输入图像的位置的(a x + b y + c)/(g x + h y + 1), (d x+ e y + f)/(g x + h y + 1)像素
-    # 使用最接近的像素进行近似。
-    def generateDistortion(self, img, imageSize, params=None):
-        if params is None:
-            # 图形扭曲参数
-            params = [1,
-                      random.randint(-5, 5) / 20,
-                      0,
-                      0,
-                      1,
-                      0,
-                      0,
-                      0
-                      ]
 
-        img = img.transform(imageSize, Image.AFFINE, params, fillcolor=(255, 255, 255))  # 创建扭曲
-
-        # img = img.filter(ImageFilter.EDGE_ENHANCE_MORE)  # 滤镜，边界加强（阈值更大）
-        return img
 
     # 加载字体库
     def getFont(self):
@@ -165,6 +143,7 @@ class VerificationGenerate:
         self.generateText(draw, code, size, font, pad=8)
         if distortion:
             img = self.generateDistortion(img, size)
+            draw = ImageDraw.Draw(img, mode="RGB")
         if lineSize > 0:
             self.generateLine(draw, size[0], size[1], lineSize)
         if pointSize > 0:
@@ -202,3 +181,26 @@ class VerificationGenerate:
             begin = (random.randint(0, width), random.randint(0, height))
             end = (random.randint(0, width), random.randint(0, height))
             draw.line([begin, end], fill=linecolor)
+    # 扭曲
+    # 对当前图像进行透视变换，产生给定尺寸的新图像。
+    # 变量data是一个8元组(a,b,c,d,e,f,g,h)，包括一个透视变换的系数。
+    # 对于输出图像中的每个像素点
+    # 新的值来自于输入图像的位置的(a x + b y + c)/(g x + h y + 1), (d x+ e y + f)/(g x + h y + 1)像素
+    # 使用最接近的像素进行近似。
+    def generateDistortion(self, img, imageSize, params=None):
+        if params is None:
+            # 图形扭曲参数
+            params = [1,
+                      random.randint(-5, 5) / 20,
+                      0,
+                      0,
+                      1,
+                      0,
+                      0,
+                      0
+                      ]
+
+        img = img.transform(imageSize, Image.AFFINE, params, fillcolor=(255, 255, 255))  # 创建扭曲
+
+        # img = img.filter(ImageFilter.EDGE_ENHANCE_MORE)  # 滤镜，边界加强（阈值更大）
+        return img
