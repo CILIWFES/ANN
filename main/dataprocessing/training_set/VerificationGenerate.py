@@ -90,8 +90,7 @@ class VerificationGenerate:
         fontSize = len(fonts)
         for i in range(trainSize):
             code = self.getCode(codeSize)
-            # item = fonts[random.randint(0, fontSize - 1)]
-            item = fonts[0]
+            item = fonts[random.randint(0, fontSize - 1)]
             img = self.generate(imageSize, code, pointSize=random.randint(5, 20), lineSize=random.randint(0, 20),
                                 fontSize=imageSize[1] * random.randint(3, 5) // 5, fontName=item)
 
