@@ -2,15 +2,23 @@ from main.frame.mxnet import *
 import numpy as np
 from main.dataprocessing.image import *
 
-model = MX_ORM.Module_Read('test/simple', (1, 3, 20, 40), labelShape=(1, 2), epoch=96)
-path = 'D:/CodeSpace/Python/ANN/files/training-package/verification/train/'
-name = '47_SitkaZ.ttc.png'
+width = 100
+hight = 40
+model = MX_ORM.Module_Read('verification/VG', (1, 3, hight, width), labelShape=(1, 4), epoch=15)
+path = 'E:/CodeSpace/Python/ANN/files/training-package/verification/make/'
+name = 'test.png'
 
 
-def reload(path, name, toWidth=40, toHigh=20):
+def reload(path, name, toWidth=100, toHigh=40):
     image = IMP.resize(IMP.readChannels(path, name), toWidth=toWidth, toHigh=toHigh)
     IMP.showPicture_RBG(IMP.conversionChannels(image, False))
     print(np.argmax(MX_Prediction.prediction(np.array([image]), model), axis=1))
 
 
-reload(path, name)
+reload(path, name, width, hight)
+
+
+def make(toWidth=100, toHigh=40):
+    image = IMP.resize(IMP.readChannels(path, name), toWidth=toWidth, toHigh=toHigh)
+    IMP.showPicture_RBG(IMP.conversionChannels(image, False))
+    print(np.argmax(MX_Prediction.prediction(np.array([image]), model), axis=1))
