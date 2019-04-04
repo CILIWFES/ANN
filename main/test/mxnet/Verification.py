@@ -43,8 +43,7 @@ def ResBlock(net, suffix, n_block, n_filter, stride=(1, 1)):
 
 def Branch(net, suffix, n_filter, stride=(1, 1)):
     # 回到主路
-    net = mx.sym.Convolution(net, name='convBranch' + suffix, kernel=(3, 3), pad=(1, 1),
-                             num_filter=n_filter, stride=stride)
+    net = ResBlock(net, 'restNet'+suffix, 1, n_filter, stride=stride)
     net = mx.sym.BatchNorm(net, name='bnBranch' + suffix, fix_gamma=False)
     net = mx.sym.Activation(net, name='actBranch' + suffix, act_type='relu')
     net = mx.sym.Pooling(net, name="pool" + suffix, pool_type="avg", kernel=(3, 3), stride=(1, 1), pad=(1, 1))
@@ -54,14 +53,16 @@ def Branch(net, suffix, n_filter, stride=(1, 1)):
 
 label = mx.symbol.Variable('softmax_label')
 net = mx.symbol.Variable('data')
+net = mx.sym.Pooling(net, name="pool", pool_type="avg", kernel=(3, 3), stride=(1, 1), pad=(1, 1))
 # # 为数据加上BN层可有一定的预处理效果
-# net = mx.sym.BatchNorm(net, name='bnPRE', fix_gamma=False)
-# 将3*40*100变化为128*40*100
+net = mx.sym.BatchNorm(net, name='bnPRE', fix_gamma=False)
+
+# 将1*40*100变化为128*40*100
 net = mx.sym.Convolution(net, name="convPRE", kernel=(3, 3), pad=(1, 1), num_filter=128)
-# 将64*40*100变化为128*40*100
+# 将128*40*100变化为64*40*100
 net = ResBlock(net, "1", 2, 64)
-# 将128*40*100变化为128*20*50
-net = ResBlock(net, "2", 1, 64, (2, 2))
+# 将64*40*100变化为64*20*50
+net = ResBlock(net, "2", 2, 64, (2, 2))
 
 # 将128*20*50变化为64*10*25
 net1 = Branch(net, "1", 64, (2, 2))
@@ -120,30 +121,33 @@ def Accuracy(label, pred, codeSize=4):
     hit = (pred_label == label).sum() // codeSize
     total = pred.shape[0] // codeSize
     return 1.0 * hit / total
+    # hit = (pred_label == label).sum() // codeSize
+    # total = pred.shape[0] // codeSize
+    # return 1.0 * hit / total
 
 
 # mx.metric.create('acc') 会运行 (pred_label == label).sum() 由于传入的label没有转置
 # 会导致出现label=[1,2,1,2,1,2,1,2] 而pred_label 是[1,1,1,1,2,2,2,]这样子
 # 2字识别极限为50%
-# sym, arg_params, aux_params = mx.model.load_checkpoint("E:/CodeSpace/Python/ANN/files/persistence/mxnet/test/VG",
-#                                                        10)  # load with net name and epoch num
+sym, arg_params, aux_params = mx.model.load_checkpoint("D:/CodeSpace/Python/ANN/files/persistence/mxnet/verification/VG",
+                                                       98)  # load with net name and epoch num
 
 # 训练
 module.fit(
     train_iter,
-    # arg_params=arg_params,
-    # aux_params=aux_params,
-    # begin_epoch=11,
+    arg_params=arg_params,
+    aux_params=aux_params,
+    begin_epoch=99,
     eval_data=val_iter,
-    initializer=mx.init.MSRAPrelu(slope=0.0),  # 采用MSRAPrelu初始化
+    # initializer=mx.init.MSRAPrelu(slope=0.0),  # 采用MSRAPrelu初始化
     optimizer='sgd',
     eval_metric=Accuracy,
     # 采用0.1的初始学习速率，并在每5000个样本后将学习速率缩减为之前的0.98倍
-    optimizer_params={'learning_rate': 0.1,
-                      'lr_scheduler': mx.lr_scheduler.FactorScheduler(step=10000 // batch_size, factor=0.95)},
-    num_epoch=50,
+    optimizer_params={'learning_rate': 0.08,
+                      'lr_scheduler': mx.lr_scheduler.FactorScheduler(step=10000 // batch_size, factor=0.9)},
+    num_epoch=130,
     # batch_end_callback=mx.callback.Speedometer(batch_size, 50000 // batch_size),
-    epoch_end_callback=mx.callback.do_checkpoint('E:/CodeSpace/Python/ANN/files/persistence/mxnet/test/VG')
+    epoch_end_callback=mx.callback.do_checkpoint('D:/CodeSpace/Python/ANN/files/persistence/mxnet/test/VG')
 )
 #
 # metric = mx.metric.create('acc')

@@ -43,6 +43,22 @@ class ImageProcessing:
             else:
                 return cv2.merge(imgs)
 
+    # 通道图片变为灰度图片
+    def channelsToGrayscale(self, imgs, isChannelFirst=True):
+        if len(imgs.shape) == 4:
+            for i in range(imgs.shape[0]):
+                imgs[i] = self.__channelsToGrayscale(imgs, isChannelFirst)
+        else:
+            imgs = self.__channelsToGrayscale(imgs, isChannelFirst)
+        return imgs
+
+    def __channelsToGrayscale(self, imgs, isChannelFirst=True):
+        if isChannelFirst:
+            imgs = (imgs[0] + imgs[1] + imgs[2]) / 3
+        else:
+            imgs = cv2.cvtColor(imgs, cv2.COLOR_RGB2GRAY)
+        return imgs
+
     # openCv 是BGR 这里与RGB相互转化(其实只是R与G互换,执行两遍换回来)
     def reversalRGB(self, imgs, mode=cv2.COLOR_RGB2BGR):
         # Opencv是 BGR ,变为RGB格式
