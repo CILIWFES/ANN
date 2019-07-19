@@ -61,7 +61,11 @@ class VerificationGenerate:
         trainImages = []
         trainLabels = []
         for path, fileName in files:
-            img = np.array([IMP.readGrayscale(path, fileName)])
+            pil = IMP.readGrayscale(path, fileName)
+            # pil = IMP.threshold(pil)
+            # pil = IMP.noise_remove_pil(pil, 4)
+            # ORM.savePicture(path,fileName,pil)
+            img = np.array([pil])
             trainImages.append(img)
             label = fileName.split('_')[0]
             trainLabels.append(np.array([self.toNum(item) for item in label]))
@@ -72,7 +76,11 @@ class VerificationGenerate:
         testImages = []
         testLabels = []
         for path, fileName in files:
-            img = np.array([IMP.readGrayscale(path, fileName)])
+            pil = IMP.readGrayscale(path, fileName)
+            # pil = IMP.threshold(pil)
+            # pil = IMP.noise_remove_pil(pil, 4)
+            # ORM.savePicture(path,fileName,pil)
+            img = np.array([pil])
             testImages.append(img)
             label = fileName.split('_')[0]
             testLabels.append(np.array([self.toNum(item) for item in label]))

@@ -8,7 +8,13 @@ logging.getLogger().setLevel(logging.DEBUG)
 print('加载图片')
 (trainImages, trainLabels), (testImages, testLabels) = VG.loadSet()
 
-batch_size = 50
+batch_size = 32
+def CBA(src, suffix, num_filter, kernel, pad, stride=(1, 1)):
+    conv = mx.sym.Convolution(src, name="conv" + suffix, kernel=(kernel, kernel), pad=(pad, pad), num_filter=num_filter,
+                              stride=stride)
+    bn = mx.sym.BatchNorm(conv, name="bn" + suffix, fix_gamma=False)
+    act = mx.sym.Activation(bn, name="act" + suffix, act_type="relu")
+    return act
 
 
 # 残差模块
@@ -43,7 +49,7 @@ def ResBlock(net, suffix, n_block, n_filter, stride=(1, 1)):
 
 def Branch(net, suffix, n_filter, stride=(1, 1)):
     # 回到主路
-    net = ResBlock(net, 'restNet'+suffix, 1, n_filter, stride=stride)
+    net = ResBlock(net, 'restNet' + suffix, 1, n_filter, stride=stride)
     net = mx.sym.BatchNorm(net, name='bnBranch' + suffix, fix_gamma=False)
     net = mx.sym.Activation(net, name='actBranch' + suffix, act_type='relu')
     net = mx.sym.Pooling(net, name="pool" + suffix, pool_type="avg", kernel=(3, 3), stride=(1, 1), pad=(1, 1))
@@ -53,31 +59,37 @@ def Branch(net, suffix, n_filter, stride=(1, 1)):
 
 label = mx.symbol.Variable('softmax_label')
 net = mx.symbol.Variable('data')
-net = mx.sym.Pooling(net, name="pool", pool_type="avg", kernel=(3, 3), stride=(1, 1), pad=(1, 1))
-# # 为数据加上BN层可有一定的预处理效果
-net = mx.sym.BatchNorm(net, name='bnPRE', fix_gamma=False)
-
 # 将1*40*100变化为128*40*100
-net = mx.sym.Convolution(net, name="convPRE", kernel=(3, 3), pad=(1, 1), num_filter=128)
+net = CBA(net, "convPRE", 128, 3, 1)
+
 # 将128*40*100变化为64*40*100
 net = ResBlock(net, "1", 2, 64)
-# 将64*40*100变化为64*20*50
-net = ResBlock(net, "2", 2, 64, (2, 2))
+net = CBA(net, "1214", 64, 3, 1)
 
-# 将128*20*50变化为64*10*25
-net1 = Branch(net, "1", 64, (2, 2))
-# 将128*20*50变化为64*10*25
-net2 = Branch(net, "2", 64, (2, 2))
-# 将128*20*50变化为64*10*25
-net3 = Branch(net, "3", 64, (2, 2))
-# 将128*20*50变化为64*10*25
-net4 = Branch(net, "4", 64, (2, 2))
-# 将128变换为10
+net = ResBlock(net, "2", 2, 32,(2,2))
+net = CBA(net, "9854", 32, 3, 1)
 
-net1 = mx.symbol.FullyConnected(data=net1, num_hidden=36)
-net2 = mx.symbol.FullyConnected(data=net2, num_hidden=36)
-net3 = mx.symbol.FullyConnected(data=net3, num_hidden=36)
-net4 = mx.symbol.FullyConnected(data=net4, num_hidden=36)
+
+# 将64*20*50变换为32*20*50
+net1 = ResBlock(net, "4", 2, 32)
+net2 = ResBlock(net, "5", 2, 32)
+net3 = ResBlock(net, "6", 2, 32)
+net4 = ResBlock(net, "7", 2, 32)
+
+# 64*40*100变化为32*10*25
+net1 = Branch(net1, "1", 32, (2, 2))
+# 将32*20*50变化为32*10*25
+net2 = Branch(net2, "2", 32, (2, 2))
+# 将32*20*50变化为32*10*25
+net3 = Branch(net3, "3", 32, (2, 2))
+# 将32*20*50变化为64*10*25
+net4 = Branch(net4, "4", 32, (2, 2))
+
+net1 = mx.symbol.FullyConnected(data=net1, num_hidden=10)
+net2 = mx.symbol.FullyConnected(data=net2, num_hidden=10)
+net3 = mx.symbol.FullyConnected(data=net3, num_hidden=10)
+net4 = mx.symbol.FullyConnected(data=net4, num_hidden=10)
+
 net = mx.symbol.Concat(*[net1, net2, net3, net4], dim=0)
 label = mx.symbol.transpose(data=label)
 label = mx.symbol.Reshape(data=label, target_shape=(0,))
@@ -129,23 +141,22 @@ def Accuracy(label, pred, codeSize=4):
 # mx.metric.create('acc') 会运行 (pred_label == label).sum() 由于传入的label没有转置
 # 会导致出现label=[1,2,1,2,1,2,1,2] 而pred_label 是[1,1,1,1,2,2,2,]这样子
 # 2字识别极限为50%
-sym, arg_params, aux_params = mx.model.load_checkpoint("D:/CodeSpace/Python/ANN/files/persistence/mxnet/verification/VG",
-                                                       98)  # load with net name and epoch num
+# sym, arg_params, aux_params = mx.model.load_checkpoint("D:/CodeSpace/Python/ANN/files/persistence/mxnet/test/VG",2)  # load with net name and epoch num
 
 # 训练
 module.fit(
     train_iter,
-    arg_params=arg_params,
-    aux_params=aux_params,
-    begin_epoch=99,
+    # arg_params=arg_params,
+    # aux_params=aux_params,
+    begin_epoch=1,
     eval_data=val_iter,
     # initializer=mx.init.MSRAPrelu(slope=0.0),  # 采用MSRAPrelu初始化
     optimizer='sgd',
     eval_metric=Accuracy,
     # 采用0.1的初始学习速率，并在每5000个样本后将学习速率缩减为之前的0.98倍
-    optimizer_params={'learning_rate': 0.08,
+    optimizer_params={'learning_rate': 0.1,
                       'lr_scheduler': mx.lr_scheduler.FactorScheduler(step=10000 // batch_size, factor=0.9)},
-    num_epoch=130,
+    num_epoch=12,
     # batch_end_callback=mx.callback.Speedometer(batch_size, 50000 // batch_size),
     epoch_end_callback=mx.callback.do_checkpoint('D:/CodeSpace/Python/ANN/files/persistence/mxnet/test/VG')
 )
